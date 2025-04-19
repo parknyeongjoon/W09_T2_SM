@@ -75,14 +75,14 @@ void FShadowRenderPass::Prepare(std::shared_ptr<FViewportClient> InViewportClien
 
     Graphics.DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
     Graphics.DeviceContext->RSSetState(Renderer.GetCurrentRasterizerState());
-    D3D11_VIEWPORT vp = {};
-    vp.TopLeftX = 0;
-    vp.TopLeftY = 0;
-    vp.Width = 1024; // ShadowMap size
-    vp.Height = 1024;
-    vp.MinDepth = 0.0f;
-    vp.MaxDepth = 1.0f;
-    Graphics.DeviceContext->RSSetViewports(1, &vp);
+    //D3D11_VIEWPORT vp = {};
+    //vp.TopLeftX = 0;
+    //vp.TopLeftY = 0;
+    //vp.Width = 1024; // ShadowMap size
+    //vp.Height = 1024;
+    //vp.MinDepth = 0.0f;
+    //vp.MaxDepth = 1.0f;
+    //Graphics.DeviceContext->RSSetViewports(1, &vp);
 
     ID3D11ShaderResourceView* nullSRV[1] = { nullptr };
     Graphics.DeviceContext->PSSetShaderResources(0, 1, nullSRV);
@@ -112,17 +112,23 @@ void FShadowRenderPass::Execute(std::shared_ptr<FViewportClient> InViewportClien
         }
         if (USpotLightComponent* SpotLight = Cast<USpotLightComponent>(Comp))
         {
+            FShadowResource* ShadowResource = SpotLight->GetShadowResource();
+            if (ShadowResource == nullptr)
+                return;
+
+            D3D11_VIEWPORT vp = ShadowResource->GetViewport();
+            Graphics.DeviceContext->RSSetViewports(1, &vp);
             Prepare(InViewportClient);
             Graphics.DeviceContext->ClearDepthStencilView(
-                SpotLight->GetDSV(),
+                ShadowResource->GetDSV(),
                 D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
                 1.0f, 0
             );
-            Graphics.DeviceContext->ClearRenderTargetView(SpotLight->GetRTV(), ClearColor);
+            //Graphics.DeviceContext->ClearRenderTargetView(SpotLight->GetRTV(), ClearColor);
             ID3D11ShaderResourceView* nullSRVs[8] = { nullptr };
 
             Graphics.DeviceContext->PSSetShaderResources(3, 8, nullSRVs);
-            Graphics.DeviceContext->OMSetRenderTargets(0, nullptr, SpotLight->GetDSV()); // 렌더 타겟 설정
+            Graphics.DeviceContext->OMSetRenderTargets(0, nullptr, ShadowResource->GetDSV()); // 렌더 타겟 설정
             View = SpotLight->GetViewMatrix();//GEngine->GetLevelEditor()->GetActiveViewportClient()->GetViewMatrix();
             Proj = SpotLight->GetProjectionMatrix();//GEngine->GetLevelEditor()->GetActiveViewportClient()->GetProjectionMatrix();
             for (const auto& StaticMesh : StaticMeshComponents)
@@ -159,7 +165,7 @@ void FShadowRenderPass::Execute(std::shared_ptr<FViewportClient> InViewportClien
             Graphics.DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
             ID3D11SamplerState* Sampler = Renderer.GetSamplerState(ESamplerType::Point);
             Graphics.DeviceContext->PSSetSamplers(0, 1, &Sampler);
-            ID3D11ShaderResourceView* ShadowMap = SpotLight->GetShadowMap()->TextureSRV;
+            ID3D11ShaderResourceView* ShadowMap = ShadowResource->GetSRV();
             Graphics.DeviceContext->CopyResource(Graphics.DepthCopyTexture, Graphics.DepthStencilBuffer);
             Graphics.DeviceContext->PSSetShaderResources(0, 1, &ShadowMap);
             Graphics.DeviceContext->Draw(4, 0);

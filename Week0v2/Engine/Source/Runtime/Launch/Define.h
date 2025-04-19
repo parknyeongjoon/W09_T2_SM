@@ -523,6 +523,16 @@ struct FFrustum
 #define MAX_DIRECTIONAL_LIGHTS 4
 #define MAX_POINT_LIGHTS 16
 
+
+enum class ELightType
+{
+    None,
+    DirectionalLight,
+    PointLight,
+    SpotLight,
+    Max,
+};
+
 struct FDirectionalLight
 {
     FVector Direction;

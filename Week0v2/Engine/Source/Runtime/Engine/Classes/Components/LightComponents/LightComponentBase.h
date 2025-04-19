@@ -3,7 +3,9 @@
 #include "Components/SceneComponent.h"
 #include "Engine/Texture.h"
 #include "UObject/ObjectMacros.h"
-
+#include <wrl/client.h> // Add this include for Microsoft::WRL::ComPtr
+#include <Light/ShadowResource.h>
+using Microsoft::WRL::ComPtr; // Add this using directive to use ComPtr
 struct FLightComponentBaseInfo : public FSceneComponentInfo
 {
     DECLARE_ACTORCOMPONENT_INFO(FLightComponentBaseInfo);
@@ -75,8 +77,8 @@ public:
     bool CanCastShadows() const { return bCastShadows; }
     void SetCastShadows(const bool InbCastShadows) { bCastShadows = InbCastShadows; }
 
-    FTexture* GetShadowMap() const { return ShadowMap; }
-    ID3D11DepthStencilView* GetDSV() const { return DSV; }
+    //FTexture* GetShadowMap() const { return ShadowMap; }
+    //ID3D11DepthStencilView* GetDSV() const { return DSV; }
 
     FTexture* GetLightMap() const { return LightMap; }
     ID3D11RenderTargetView* GetRTV() const { return LightRTV; }
@@ -92,10 +94,15 @@ public:
     virtual void LoadAndConstruct(const FActorComponentInfo& Info) override;
 
 protected:
-    FTexture* ShadowMap = nullptr;
-    ID3D11DepthStencilView* DSV = nullptr;
+    //FTexture* ShadowMap = nullptr;
+    //ID3D11DepthStencilView* DSV = nullptr;
 
     FTexture* LightMap = nullptr;
     ID3D11RenderTargetView* LightRTV = nullptr;
+
+protected:
+    FShadowResource* ShadowResource = nullptr;
+public:
+    FShadowResource* GetShadowResource() const { return ShadowResource; }
 };
 

@@ -404,7 +404,7 @@ void PropertyEditorPanel::Render()
                     SpotLight->SetInnerConeAngle(InnerAngle);
                 }
             }
-            ImTextureID LightDepth = reinterpret_cast<ImTextureID>(SpotLight->GetShadowMap()->TextureSRV);
+            ImTextureID LightDepth = reinterpret_cast<ImTextureID>(SpotLight->GetShadowResource()->GetSRV());
             ImGui::Text("Shadow Map");
             ImGui::Image(LightDepth, imageSize);
             ImTextureID LightTexture = reinterpret_cast<ImTextureID>(SpotLight->GetLightMap()->TextureSRV);
