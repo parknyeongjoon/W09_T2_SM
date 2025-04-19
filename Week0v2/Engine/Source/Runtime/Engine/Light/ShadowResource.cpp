@@ -70,17 +70,20 @@ FShadowResource::FShadowResource(ID3D11Device* Device, ELightType LightType)
     {
         NumFaces = 6;
         // Texture2D - Cube Array
-        D3D11_TEXTURE2D_DESC texDesc = {};
-        texDesc.Width = ShadowResolution;
-        texDesc.Height = ShadowResolution;
-        texDesc.MipLevels = 1;
-        texDesc.ArraySize = 6;
-        texDesc.Format = DXGI_FORMAT_D32_FLOAT;
-        texDesc.SampleDesc.Count = 1;
-        texDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
-        texDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
+        D3D11_TEXTURE2D_DESC desc = {};
+        desc.Width = 1024;
+        desc.Height = 1024;
+        desc.MipLevels = 1;
+        desc.ArraySize = 6;  // 큐브맵의 6개 면
+        desc.Format = DXGI_FORMAT_R32_TYPELESS;
+        desc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+        desc.Usage = D3D11_USAGE_DEFAULT;
+        desc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;  // 중요: 큐브맵으로 지정
+        desc.SampleDesc.Count = 1;
+        desc.SampleDesc.Quality = 0;
 
-        HRESULT hr = Device->CreateTexture2D(&texDesc, nullptr, &ShadowTexture);
+
+        HRESULT hr = Device->CreateTexture2D(&desc, nullptr, ShadowTexture.GetAddressOf());
         if (FAILED(hr))
         {
             assert(TEXT("Shadow Texture creation failed"));
@@ -88,10 +91,12 @@ FShadowResource::FShadowResource(ID3D11Device* Device, ELightType LightType)
         }
 
         // SRV
+         // 3. 셰이더 리소스 뷰 생성
         D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
         srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
         srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
         srvDesc.TextureCube.MipLevels = 1;
+        srvDesc.TextureCube.MostDetailedMip = 0;
 
         hr = Device->CreateShaderResourceView(ShadowTexture.Get(), &srvDesc, &ShadowSRV);
         if (FAILED(hr))
@@ -103,14 +108,15 @@ FShadowResource::FShadowResource(ID3D11Device* Device, ELightType LightType)
         // DSV 6 faces
         for (UINT face = 0; face < 6; ++face)
         {
-            D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
-            dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
-            dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
-            dsvDesc.Texture2DArray.MipSlice = 0;
-            dsvDesc.Texture2DArray.FirstArraySlice = face;
-            dsvDesc.Texture2DArray.ArraySize = 1;
+            D3D11_DEPTH_STENCIL_VIEW_DESC faceDSVDesc = {};
+            faceDSVDesc.Format = DXGI_FORMAT_D32_FLOAT;
+            faceDSVDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+            faceDSVDesc.Texture2DArray.MipSlice = 0;
+            faceDSVDesc.Texture2DArray.FirstArraySlice = face;
+            faceDSVDesc.Texture2DArray.ArraySize = 1;
+
             ComPtr<ID3D11DepthStencilView> dsv;
-            hr = Device->CreateDepthStencilView(ShadowTexture.Get(), &dsvDesc, &dsv);
+            hr = Device->CreateDepthStencilView(ShadowTexture.Get(), &faceDSVDesc, &dsv);
             if (FAILED(hr))
             {
                 assert(TEXT("Shadow DSV creation failed"));

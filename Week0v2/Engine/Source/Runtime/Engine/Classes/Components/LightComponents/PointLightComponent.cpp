@@ -6,59 +6,29 @@
 
 UPointLightComponent::UPointLightComponent()
 {
-    ShadowMap = new FTexture(nullptr, nullptr, 0, 0, L"");
+    ShadowResource = FShadowResourceFactory::CreateShadowResource(GEngine->graphicDevice.Device, ELightType::PointLight);
     LightMap = new FTexture(nullptr, nullptr, 0, 0, L"");
 
     FGraphicsDevice& Graphics = GEngine->graphicDevice;
 
-    // 1. 큐브맵 텍스처 생성
-    D3D11_TEXTURE2D_DESC desc = {};
-    desc.Width = 1024;
-    desc.Height = 1024;
-    desc.MipLevels = 1;
-    desc.ArraySize = 6;  // 큐브맵의 6개 면
-    desc.Format = DXGI_FORMAT_R32_TYPELESS;
-    desc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
-    desc.Usage = D3D11_USAGE_DEFAULT;
-    desc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;  // 중요: 큐브맵으로 지정
-    desc.SampleDesc.Count = 1;
-    desc.SampleDesc.Quality = 0;
+  
 
-    HRESULT hr = Graphics.Device->CreateTexture2D(&desc, nullptr, &ShadowMap->Texture);
-    if (FAILED(hr))
-    {
-        assert(TEXT("ShadowCubeMap creation failed"));
-        return;
-    }
+    //// 2. 깊이 스텐실 뷰 생성 (모든 면에 대해 하나)
+    //D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+    //dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    //dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+    //dsvDesc.Texture2DArray.MipSlice = 0;
+    //dsvDesc.Texture2DArray.FirstArraySlice = 0;
+    //dsvDesc.Texture2DArray.ArraySize = 6;  // 모든 면 포함
 
-    // 2. 깊이 스텐실 뷰 생성 (모든 면에 대해 하나)
-    D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
-    dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
-    dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
-    dsvDesc.Texture2DArray.MipSlice = 0;
-    dsvDesc.Texture2DArray.FirstArraySlice = 0;
-    dsvDesc.Texture2DArray.ArraySize = 6;  // 모든 면 포함
+    //hr = Graphics.Device->CreateDepthStencilView(ShadowMap->Texture, &dsvDesc, &DSV);
+    //if (FAILED(hr))
+    //{
+    //    assert(TEXT("ShadowCubeMap DSV creation failed"));
+    //    return;
+    //}
 
-    hr = Graphics.Device->CreateDepthStencilView(ShadowMap->Texture, &dsvDesc, &DSV);
-    if (FAILED(hr))
-    {
-        assert(TEXT("ShadowCubeMap DSV creation failed"));
-        return;
-    }
-
-    // 3. 셰이더 리소스 뷰 생성
-    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-    srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
-    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
-    srvDesc.TextureCube.MipLevels = 1;
-    srvDesc.TextureCube.MostDetailedMip = 0;
-
-    hr = Graphics.Device->CreateShaderResourceView(ShadowMap->Texture, &srvDesc, &ShadowMap->TextureSRV);
-    if (FAILED(hr))
-    {
-        assert(TEXT("ShadowCubeMap SRV creation failed"));
-        return;
-    }
+   
 
     // 4. 결과 저장을 위한 렌더 타겟 텍스처 생성
     D3D11_TEXTURE2D_DESC lightMapDesc = {};
@@ -74,7 +44,7 @@ UPointLightComponent::UPointLightComponent()
     lightMapDesc.CPUAccessFlags = 0;
     lightMapDesc.MiscFlags = 0;
 
-    hr = Graphics.Device->CreateTexture2D(&lightMapDesc, nullptr, &LightMap->Texture);
+    HRESULT hr = Graphics.Device->CreateTexture2D(&lightMapDesc, nullptr, &LightMap->Texture);
     if (FAILED(hr))
     {
         assert(TEXT("LightMap creation failed"));
@@ -95,7 +65,7 @@ UPointLightComponent::UPointLightComponent()
     }
 
     // 6. LightMap SRV 생성
-    srvDesc = {};
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
     srvDesc.Texture2D.MostDetailedMip = 0;
@@ -108,22 +78,7 @@ UPointLightComponent::UPointLightComponent()
         return;
     }
 
-    for (int i = 0; i < 6; i++)
-    {
-        D3D11_DEPTH_STENCIL_VIEW_DESC faceDSVDesc = {};
-        faceDSVDesc.Format = DXGI_FORMAT_D32_FLOAT;
-        faceDSVDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
-        faceDSVDesc.Texture2DArray.MipSlice = 0;
-        faceDSVDesc.Texture2DArray.FirstArraySlice = i;
-        faceDSVDesc.Texture2DArray.ArraySize = 1;
-
-        hr = Graphics.Device->CreateDepthStencilView(ShadowMap->Texture, &faceDSVDesc, &FacesDSV[i]);
-        if (FAILED(hr))
-        {
-            assert(TEXT("Face DSV creation failed"));
-            return;
-        }
-    }
+  
 }
 
 UPointLightComponent::UPointLightComponent(const UPointLightComponent& Other)
