@@ -83,10 +83,26 @@ FShadowResource::FShadowResource(ID3D11Device* Device, ELightType LightType)
         desc.SampleDesc.Quality = 0;
 
 
+
         HRESULT hr = Device->CreateTexture2D(&desc, nullptr, ShadowTexture.GetAddressOf());
         if (FAILED(hr))
         {
             assert(TEXT("Shadow Texture creation failed"));
+            return;
+        }
+
+        // 모든 면을 한 번에 처리하는 DSV 생성
+        D3D11_DEPTH_STENCIL_VIEW_DESC allFacesDSVDesc = {};
+        allFacesDSVDesc.Format = DXGI_FORMAT_D32_FLOAT;
+        allFacesDSVDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+        allFacesDSVDesc.Texture2DArray.MipSlice = 0;
+        allFacesDSVDesc.Texture2DArray.FirstArraySlice = 0;
+        allFacesDSVDesc.Texture2DArray.ArraySize = 6;  // 모든 면 포함
+
+        hr = Device->CreateDepthStencilView(ShadowTexture.Get(), &allFacesDSVDesc, &ShadowDSV);
+        if (FAILED(hr))
+        {
+            assert(TEXT("Shadow All Faces DSV creation failed"));
             return;
         }
 

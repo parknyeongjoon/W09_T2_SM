@@ -176,7 +176,7 @@ void FShadowRenderPass::Execute(std::shared_ptr<FViewportClient> InViewportClien
                 Prepare(InViewportClient);
                 // 모든 면의 DSV를 한 번에 클리어
                 Graphics.DeviceContext->ClearDepthStencilView(
-                    PointLight->GetShadowResource()->GetDSV(),
+                    PointLight->GetShadowResource()->ShadowDSV.Get(),
                     D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
                     1.0f, 0
                 );
@@ -185,7 +185,7 @@ void FShadowRenderPass::Execute(std::shared_ptr<FViewportClient> InViewportClien
                 for (int face = 0; face < 6; face++)
                 {
                     // 현재 면의 DSV 가져오기
-                    ID3D11DepthStencilView* faceDSV = PointLight->GetFaceDSV(face);
+                    ID3D11DepthStencilView* faceDSV = PointLight->GetShadowResource()->GetDSV(face);
 
                     // 셰이더 리소스 초기화
                     ID3D11ShaderResourceView* nullSRVs[8] = { nullptr };

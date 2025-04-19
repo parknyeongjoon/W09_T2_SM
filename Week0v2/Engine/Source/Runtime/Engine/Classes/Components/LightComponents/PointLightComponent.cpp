@@ -125,18 +125,6 @@ void UPointLightComponent::LoadAndConstruct(const FActorComponentInfo& Info)
     AttenuationFalloff = PointLightInfo.AttenuationFalloff;
 }
 
-ID3D11DepthStencilView* UPointLightComponent::GetFaceDSV(int faceIndex)
-{
-    // 범위 확인
-    if (faceIndex < 0 || faceIndex >= 6)
-    {
-        // 오류 처리 - 기본 DSV 반환 또는 nullptr 반환
-        return nullptr;
-        
-    }
-
-    return FacesDSV[faceIndex];
-}
 
 FMatrix UPointLightComponent::GetViewMatrixForFace(int faceIndex)
 {

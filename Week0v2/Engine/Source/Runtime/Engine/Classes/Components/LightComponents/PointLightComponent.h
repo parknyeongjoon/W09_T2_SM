@@ -63,7 +63,6 @@ public:
 public:
     virtual std::shared_ptr<FActorComponentInfo> GetActorComponentInfo() override;
     virtual void LoadAndConstruct(const FActorComponentInfo& Info) override;
-    ID3D11DepthStencilView* GetFaceDSV(int faceIndex);
     FMatrix GetViewMatrixForFace(int faceIndex);
     FMatrix GetProjectionMatrix();
 };

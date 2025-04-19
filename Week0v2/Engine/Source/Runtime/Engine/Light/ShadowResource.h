@@ -13,6 +13,7 @@ struct FShadowResource
    TArray<ComPtr<ID3D11DepthStencilView>> ShadowDSVs;  
    ComPtr<ID3D11Texture2D> ShadowTexture;  
    TArray<D3D11_VIEWPORT> Viewports;  
+   ComPtr<ID3D11DepthStencilView>ShadowDSV;
 
    // Face의 개수. Directional/Spot Light는 1개, Point Light는 6개..  
    int NumFaces = 1;  
