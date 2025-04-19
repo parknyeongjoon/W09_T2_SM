@@ -48,6 +48,7 @@ public:
 protected:
     float Radius = 1.0f;
     float AttenuationFalloff = 0.01f;
+    ID3D11DepthStencilView* FacesDSV[6];  // 각 면별 DSV
 
 public:
     float GetRadius() const { return Radius; }
@@ -62,6 +63,8 @@ public:
 public:
     virtual std::shared_ptr<FActorComponentInfo> GetActorComponentInfo() override;
     virtual void LoadAndConstruct(const FActorComponentInfo& Info) override;
-
+    ID3D11DepthStencilView* GetFaceDSV(int faceIndex);
+    FMatrix GetViewMatrixForFace(int faceIndex);
+    FMatrix GetProjectionMatrix();
 };
 

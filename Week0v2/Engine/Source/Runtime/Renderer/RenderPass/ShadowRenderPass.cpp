@@ -122,8 +122,8 @@ void FShadowRenderPass::Execute(std::shared_ptr<FViewportClient> InViewportClien
                 1.0f, 0
             );
             Graphics.DeviceContext->ClearRenderTargetView(SpotLight->GetRTV(), ClearColor);
-            ID3D11ShaderResourceView* nullSRVs = { nullptr };
-            Graphics.DeviceContext->PSSetShaderResources(3, 8, &nullSRVs);
+            ID3D11ShaderResourceView* nullSRVs[8] = {nullptr};
+            Graphics.DeviceContext->PSSetShaderResources(3, 8, nullSRVs);
             Graphics.DeviceContext->OMSetRenderTargets(0, nullptr, SpotLight->GetDSV()); // 렌더 타겟 설정
 
             View = SpotLight->GetViewMatrix();
@@ -158,6 +158,75 @@ void FShadowRenderPass::Execute(std::shared_ptr<FViewportClient> InViewportClien
                 }
             }
        
+            curLight += 1;
+        }
+        else if (UPointLightComponent* PointLight = Cast<UPointLightComponent>(Comp))
+        {
+            // 모든 면의 DSV를 한 번에 클리어
+            Graphics.DeviceContext->ClearDepthStencilView(
+                PointLight->GetDSV(),
+                D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
+                1.0f, 0
+            );
+
+            // 6개 면에 대해 각각 렌더링
+            for (int face = 0; face < 6; face++)
+            {
+                // 현재 면의 DSV 가져오기
+                ID3D11DepthStencilView* faceDSV = PointLight->GetFaceDSV(face);
+
+                // 셰이더 리소스 초기화
+                ID3D11ShaderResourceView* nullSRVs[8] = { nullptr };
+                Graphics.DeviceContext->PSSetShaderResources(3, 8, nullSRVs);
+
+                // 렌더 타겟 설정
+                Graphics.DeviceContext->OMSetRenderTargets(0, nullptr, faceDSV);
+
+                // 현재 면의 뷰/투영 행렬 설정
+                View = PointLight->GetViewMatrixForFace(face);
+                Proj = PointLight->GetProjectionMatrix(); // 90도 FOV 투영 행렬
+
+                // 모든 메시 렌더링
+                for (const auto& StaticMesh : StaticMeshComponents)
+                {
+                    if (!StaticMesh->GetStaticMesh()) continue;
+                    const OBJ::FStaticMeshRenderData* renderData = StaticMesh->GetStaticMesh()->GetRenderData();
+                    if (renderData == nullptr) continue;
+
+                    Model = StaticMesh->GetWorldMatrix();
+                    // 현재 면과 라이트 인덱스 정보 업데이트
+                    UpdateCameraConstant(Model, View, Proj, curLight);
+
+                    // VIBuffer Bind
+                    const std::shared_ptr<FVBIBTopologyMapping> VBIBTopMappingInfo =
+                        Renderer.GetVBIBTopologyMapping(StaticMesh->GetVBIBTopologyMappingName());
+                    VBIBTopMappingInfo->Bind();
+
+                    // 서브셋 렌더링
+                    if (renderData->MaterialSubsets.Num() == 0)
+                    {
+                        Graphics.DeviceContext->DrawIndexed(VBIBTopMappingInfo->GetNumIndices(), 0, 0);
+                    }
+                    else
+                    {
+                        for (int subMeshIndex = 0; subMeshIndex < renderData->MaterialSubsets.Num(); ++subMeshIndex)
+                        {
+                            const uint64 startIndex = renderData->MaterialSubsets[subMeshIndex].IndexStart;
+                            const uint64 indexCount = renderData->MaterialSubsets[subMeshIndex].IndexCount;
+                            Graphics.DeviceContext->DrawIndexed(indexCount, startIndex, 0);
+                        }
+                    }
+                }
+            }
+
+            // 후처리 (필요한 경우)
+            ID3D11RenderTargetView* RTV = PointLight->GetRTV();
+            if (RTV != nullptr)
+            {
+                // 필요한 후처리 작업
+                // ...
+            }
+
             curLight += 1;
         }
       
