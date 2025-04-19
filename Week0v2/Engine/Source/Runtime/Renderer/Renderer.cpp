@@ -92,6 +92,8 @@ void FRenderer::Initialize(FGraphicsDevice* graphics)
     ShadowRenderPass = std::make_shared<FShadowRenderPass>(TEXT("Shadow"));
 
     CreateVertexPixelShader(TEXT("LightDepth"), nullptr);
+
+
 }
 
 void FRenderer::PrepareShader(const FName InShaderName)

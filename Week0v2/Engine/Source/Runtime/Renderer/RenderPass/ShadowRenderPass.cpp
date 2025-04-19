@@ -120,7 +120,7 @@ void FShadowRenderPass::Execute(std::shared_ptr<FViewportClient> InViewportClien
             );
             Graphics.DeviceContext->ClearRenderTargetView(SpotLight->GetRTV(), ClearColor);
             ID3D11ShaderResourceView* nullSRVs[8] = { nullptr };
-            ID3D11ShaderResourceView* nullSRVs[8] = {nullptr};
+
             Graphics.DeviceContext->PSSetShaderResources(3, 8, nullSRVs);
             Graphics.DeviceContext->OMSetRenderTargets(0, nullptr, SpotLight->GetDSV()); // 렌더 타겟 설정
             View = SpotLight->GetViewMatrix();//GEngine->GetLevelEditor()->GetActiveViewportClient()->GetViewMatrix();
@@ -167,6 +167,7 @@ void FShadowRenderPass::Execute(std::shared_ptr<FViewportClient> InViewportClien
         }
         else if (UPointLightComponent* PointLight = Cast<UPointLightComponent>(Comp))
         {
+            Prepare(InViewportClient);
             // 모든 면의 DSV를 한 번에 클리어
             Graphics.DeviceContext->ClearDepthStencilView(
                 PointLight->GetDSV(),
@@ -227,9 +228,42 @@ void FShadowRenderPass::Execute(std::shared_ptr<FViewportClient> InViewportClien
             // 후처리 (필요한 경우)
             ID3D11RenderTargetView* RTV = PointLight->GetRTV();
             if (RTV != nullptr)
-            {
-                // 필요한 후처리 작업
-                // ...
+            {// 각 면의 개별 SRV 생성
+                for (int face = 0; face < 6; face++)
+                {
+                    // 각 면의 개별 SRV 생성
+                    D3D11_SHADER_RESOURCE_VIEW_DESC faceDesc = {};
+                    faceDesc.Format = DXGI_FORMAT_R32_FLOAT;
+                    faceDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+                    faceDesc.Texture2DArray.MostDetailedMip = 0;
+                    faceDesc.Texture2DArray.MipLevels = 1;
+                    faceDesc.Texture2DArray.FirstArraySlice = face;  // 현재 면 선택
+                    faceDesc.Texture2DArray.ArraySize = 1;
+
+                    ID3D11ShaderResourceView* faceSRV = nullptr;
+                    HRESULT hr = Graphics.Device->CreateShaderResourceView(
+                        PointLight->GetShadowMap()->Texture,
+                        &faceDesc,
+                        &faceSRV
+                    );
+
+                    if (SUCCEEDED(hr))
+                    {
+                        GEngine->renderer.PrepareShader(TEXT("LightDepth"));
+                        Graphics.DeviceContext->OMSetRenderTargets(1, &RTV, nullptr);
+                        Graphics.DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+                        ID3D11SamplerState* Sampler = Renderer.GetSamplerState(ESamplerType::Point);
+                        Graphics.DeviceContext->PSSetSamplers(0, 1, &Sampler);
+
+                        Graphics.DeviceContext->CopyResource(Graphics.DepthCopyTexture, Graphics.DepthStencilBuffer);
+                        Graphics.DeviceContext->PSSetShaderResources(0, 1, &faceSRV);
+                        Graphics.DeviceContext->Draw(4, 0);
+
+                        // 리소스 해제
+                        faceSRV->Release();
+                    }
+                }
             }
 
             curLight += 1;
@@ -254,6 +288,8 @@ void FShadowRenderPass::UpdateCameraConstant(FMatrix Model, FMatrix View, FMatri
 
     Graphics.DeviceContext->VSSetConstantBuffers(0, 1, &CameraConstantBuffers[index]);
 }
+
+
 
 bool FShadowRenderPass::IsLightInFrustum(ULightComponentBase* LightComponent, const FFrustum& CameraFrustum) const
 {

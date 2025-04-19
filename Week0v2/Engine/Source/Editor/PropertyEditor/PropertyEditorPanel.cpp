@@ -375,6 +375,8 @@ void PropertyEditorPanel::Render()
                 //    PointLight->SetAttenuationFallOff(attenuationVal);
                 //}
             }
+
+          
         }
 
         if (PickedComponent->IsA<USpotLightComponent>())
@@ -405,11 +407,7 @@ void PropertyEditorPanel::Render()
             ImTextureID LightDepth = reinterpret_cast<ImTextureID>(SpotLight->GetShadowMap()->TextureSRV);
             ImGui::Text("Shadow Map");
             ImGui::Image(LightDepth, imageSize);
-
             ImTextureID LightTexture = reinterpret_cast<ImTextureID>(SpotLight->GetLightMap()->TextureSRV);
-
-            ImGui::Text("Light Depth View");
-            ImGui::Image(LightTexture, imageSize);
         }
     }
 
