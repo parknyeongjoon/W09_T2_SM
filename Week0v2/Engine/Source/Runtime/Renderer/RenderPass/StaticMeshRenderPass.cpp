@@ -327,6 +327,7 @@ void FStaticMeshRenderPass::UpdateLightConstants()
     FMatrix Projection = GEngine->GetLevelEditor()->GetActiveViewportClient()->GetProjectionMatrix();
     FFrustum CameraFrustum = FFrustum::ExtractFrustum(View*Projection);
     ID3D11ShaderResourceView* ShadowMaps[8] = { nullptr };
+    ID3D11ShaderResourceView* ShadowCubeSRV = nullptr;
 
     for (ULightComponentBase* Comp : LightComponents)
     {
@@ -343,6 +344,7 @@ void FStaticMeshRenderPass::UpdateLightConstants()
             LightConstant.PointLights[PointLightCount].Position = PointLightComp->GetComponentLocation();
             LightConstant.PointLights[PointLightCount].Radius = PointLightComp->GetRadius();
             LightConstant.PointLights[PointLightCount].AttenuationFalloff = PointLightComp->GetAttenuationFalloff();
+            ShadowCubeSRV = PointLightComp->GetShadowResource()->GetSRV();
             PointLightCount++;
             continue;
         }
@@ -384,6 +386,7 @@ void FStaticMeshRenderPass::UpdateLightConstants()
             }
     }
 
+    Graphics.DeviceContext->PSSetShaderResources(11, 1, &ShadowCubeSRV);
     Graphics.DeviceContext->PSSetShaderResources(3, 8, ShadowMaps);
     //UE_LOG(LogLevel::Error, "Point : %d, Spot : %d Dir : %d", PointLightCount, SpotLightCount, DirectionalLightCount);
     LightConstant.NumPointLights = PointLightCount;

@@ -4,6 +4,7 @@
 Texture2D Texture : register(t0);
 Texture2D NormalTexture : register(t1);
 Texture2D SpotLightShadowMap[8] : register(t3);
+TextureCube CubeShadowMap : register(t11);
 
 StructuredBuffer<uint> TileLightIndices : register(t2);
 
@@ -127,6 +128,24 @@ struct PS_OUTPUT
     float4 UUID : SV_Target1;
 };
 
+float CalculatePointLightShadow(float3 worldPos, float3 lightPos)
+{
+    // 광원에서 픽셀까지의 방향 벡터 계산
+    float3 lightToPos = worldPos - lightPos;
+    
+    // 실제 거리 계산
+    float currentDistance = length(lightToPos);
+    
+    // 방향 정규화 (큐브맵 샘플링용)
+    float3 direction = normalize(lightToPos);
+    
+    // 큐브맵에서 저장된 거리 가져오기
+    float closestDepth = CubeShadowMap.Sample(pointSampler, direction).r;
+    
+    // 그림자 여부 결정 (바이어스 없이)
+    return (currentDistance <= closestDepth) ? 1.0 : 0.0;
+}
+
 float3 CalculateDirectionalLight(  
     FDirectionalLight Light,  
     float3 Normal,  
@@ -244,7 +263,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
     PS_OUTPUT output;
     output.UUID = UUID;
     float2 uvAdjusted = input.texcoord;
-    
+  
     // 기본 색상 추출  
     float4 baseColor = Texture.Sample(linearSampler, uvAdjusted) + float4(DiffuseColor, 1.0);  
 
@@ -303,6 +322,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
         TotalLight += CalculateDirectionalLight(DirLights[i], Normal, ViewDir, baseColor.rgb);  
 
     // 점광 처리  
+    [unroll(16)]
     for(uint j=0; j<NumPointLights; ++j)
     {
         uint listIndex = tileIndex * MAX_POINTLIGHT_COUNT + j;
@@ -312,7 +332,15 @@ PS_OUTPUT mainPS(PS_INPUT input)
             break;
         }
         
-        TotalLight += CalculatePointLight(PointLights[lightIndex], input.worldPos, Normal, ViewDir, baseColor.rgb);
+      
+          // 먼저 포인트 라이트 조명 계산
+        float3 lightColor = CalculatePointLight(PointLights[lightIndex], input.worldPos, Normal, ViewDir, baseColor.rgb);
+    
+    // 포인트 라이트 그림자 계산
+        float shadow = CalculatePointLightShadow(input.worldPos, PointLights[lightIndex].Position);
+    
+    // 그림자를 조명 계산에 적용
+        TotalLight += lightColor * shadow;
     }
     
     for (uint k = 0; k < NumSpotLights; ++k)

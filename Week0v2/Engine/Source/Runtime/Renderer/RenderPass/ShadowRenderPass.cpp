@@ -228,49 +228,52 @@ void FShadowRenderPass::Execute(std::shared_ptr<FViewportClient> InViewportClien
                                 Graphics.DeviceContext->DrawIndexed(indexCount, startIndex, 0);
                             }
                         }
+
+                        Graphics.DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
+
                     }
                 }
 
                 // 후처리 (필요한 경우)
                 ID3D11RenderTargetView* RTV = PointLight->GetRTV();
-                if (RTV != nullptr)
-                {// 각 면의 개별 SRV 생성
-                    for (int face = 0; face < 6; face++)
-                    {
-                        // 각 면의 개별 SRV 생성
-                        D3D11_SHADER_RESOURCE_VIEW_DESC faceDesc = {};
-                        faceDesc.Format = DXGI_FORMAT_R32_FLOAT;
-                        faceDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-                        faceDesc.Texture2DArray.MostDetailedMip = 0;
-                        faceDesc.Texture2DArray.MipLevels = 1;
-                        faceDesc.Texture2DArray.FirstArraySlice = face;  // 현재 면 선택
-                        faceDesc.Texture2DArray.ArraySize = 1;
+                //if (RTV != nullptr)
+                //{// 각 면의 개별 SRV 생성
+                //    for (int face = 0; face < 6; face++)
+                //    {
+                //        // 각 면의 개별 SRV 생성
+                //        D3D11_SHADER_RESOURCE_VIEW_DESC faceDesc = {};
+                //        faceDesc.Format = DXGI_FORMAT_R32_FLOAT;
+                //        faceDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+                //        faceDesc.Texture2DArray.MostDetailedMip = 0;
+                //        faceDesc.Texture2DArray.MipLevels = 1;
+                //        faceDesc.Texture2DArray.FirstArraySlice = face;  // 현재 면 선택
+                //        faceDesc.Texture2DArray.ArraySize = 1;
 
-                        ID3D11ShaderResourceView* faceSRV = nullptr;
-                        HRESULT hr = Graphics.Device->CreateShaderResourceView(
-                            PointLight->GetShadowResource()->GetTexture(),
-                            &faceDesc,
-                            &faceSRV
-                        );
+                //        ID3D11ShaderResourceView* faceSRV = nullptr;
+                //        HRESULT hr = Graphics.Device->CreateShaderResourceView(
+                //            PointLight->GetShadowResource()->GetTexture(),
+                //            &faceDesc,
+                //            &faceSRV
+                //        );
 
-                        if (SUCCEEDED(hr))
-                        {
-                            GEngine->renderer.PrepareShader(TEXT("LightDepth"));
-                            Graphics.DeviceContext->OMSetRenderTargets(1, &RTV, nullptr);
-                            Graphics.DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+                //        if (SUCCEEDED(hr))
+                //        {
+                //            GEngine->renderer.PrepareShader(TEXT("LightDepth"));
+                //            Graphics.DeviceContext->OMSetRenderTargets(1, &RTV, nullptr);
+                //            Graphics.DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-                            ID3D11SamplerState* Sampler = Renderer.GetSamplerState(ESamplerType::Point);
-                            Graphics.DeviceContext->PSSetSamplers(0, 1, &Sampler);
+                //            ID3D11SamplerState* Sampler = Renderer.GetSamplerState(ESamplerType::Point);
+                //            Graphics.DeviceContext->PSSetSamplers(0, 1, &Sampler);
 
-                            Graphics.DeviceContext->CopyResource(Graphics.DepthCopyTexture, Graphics.DepthStencilBuffer);
-                            Graphics.DeviceContext->PSSetShaderResources(0, 1, &faceSRV);
-                            Graphics.DeviceContext->Draw(4, 0);
+                //            Graphics.DeviceContext->CopyResource(Graphics.DepthCopyTexture, Graphics.DepthStencilBuffer);
+                //            Graphics.DeviceContext->PSSetShaderResources(0, 1, &faceSRV);
+                //            Graphics.DeviceContext->Draw(4, 0);
 
-                            // 리소스 해제
-                            faceSRV->Release();
-                        }
-                    }
-                }
+                //            // 리소스 해제
+                //            faceSRV->Release();
+                //        }
+                //    }
+                //}
 
                 curLight += 1;
             }

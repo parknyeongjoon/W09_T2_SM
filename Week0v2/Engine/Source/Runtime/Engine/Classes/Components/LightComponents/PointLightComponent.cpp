@@ -180,7 +180,7 @@ FMatrix UPointLightComponent::GetViewMatrixForFace(int faceIndex)
 FMatrix UPointLightComponent::GetProjectionMatrix()
 {
     // 포인트 라이트는 항상 90도(큐브맵의 각 면)
-    const float cubeFaceAngle = 90.0f;
+    const float cubeFaceAngle = 3.14159265358979323846f/2.f;
 
     // 1:1 종횡비 (정사각형)
     const float aspectRatio = 1.0f;
