@@ -22,7 +22,12 @@ ULightComponentBase::ULightComponentBase(const ULightComponentBase& Other)
 
 ULightComponentBase::~ULightComponentBase()
 {
-    //delete texture2D;
+    // remove shadow resource
+    if (ShadowResource)
+    {
+        delete ShadowResource;
+        ShadowResource = nullptr;
+    }
 }
 
 void ULightComponentBase::SetColor(FVector4 newColor)
@@ -103,6 +108,7 @@ void ULightComponentBase::BeginPlay()
 
 void ULightComponentBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+    
 }
 
 

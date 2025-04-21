@@ -242,6 +242,8 @@
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Engine\StaticMeshActor.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Engine\World.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\GameFramework\Actor.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Light\ShadowAtlas.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Light\ShadowAtlas.h" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Light\ShadowResource.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\UnrealClient.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\UnrealEngine.cpp" />
