@@ -1,8 +1,6 @@
 #include "ShadowResource.h"
 #include "Math/MathUtility.h"
-UINT FShadowResource::ShadowResolution = 1024; // Default shadow resolution
-
-FShadowResource::FShadowResource(ID3D11Device* Device, ELightType LightType)
+FShadowResource::FShadowResource(ID3D11Device* Device, ELightType LightType, UINT ShadowResolution)
     :LightType(LightType)
 {
     switch (LightType)
@@ -191,9 +189,9 @@ size_t FShadowResource::GetEsimatedMemoryUsageInBytes() const
     return Total;
 }
 
-FShadowResource* FShadowResourceFactory::CreateShadowResource(ID3D11Device* Device, ELightType LightType)
+FShadowResource* FShadowResourceFactory::CreateShadowResource(ID3D11Device* Device, ELightType LightType, UINT ShadowResolution)
 {
-    FShadowResource* shadowResource = new FShadowResource(Device, LightType);
+    FShadowResource* shadowResource = new FShadowResource(Device, LightType, ShadowResolution);
     if (shadowResource)
     {
         if (ShadowResources.Contains(shadowResource->LightType))

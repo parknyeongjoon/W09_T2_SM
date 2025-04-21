@@ -8,12 +8,12 @@ using Microsoft::WRL::ComPtr;
 
 struct FShadowResource  
 {  
-   static UINT ShadowResolution;
-
    ComPtr<ID3D11ShaderResourceView> ShadowSRV; // Example usage of ComPtr  
    TArray<ComPtr<ID3D11DepthStencilView>> ShadowDSVs;  
    ComPtr<ID3D11Texture2D> ShadowTexture;  
    TArray<D3D11_VIEWPORT> Viewports;  
+
+   UINT ShadowResolution;
 
    // Face의 개수. Directional/Spot Light는 1개, Point Light는 6개..  
    int NumFaces = 1;  
@@ -21,7 +21,7 @@ struct FShadowResource
    ELightType LightType;  
 
    FShadowResource() = default;
-   FShadowResource(ID3D11Device* Device, ELightType LightType);
+   FShadowResource(ID3D11Device* Device, ELightType LightType, UINT ShadowResolution);
    ~FShadowResource();
 
    size_t GetEsimatedMemoryUsageInBytes() const;
@@ -53,7 +53,7 @@ class FShadowResourceFactory
 {
 public:
     static inline TMap<ELightType, TArray<FShadowResource*>> ShadowResources;
-    static FShadowResource* CreateShadowResource(ID3D11Device* Device, ELightType LightType);
+    static FShadowResource* CreateShadowResource(ID3D11Device* Device, ELightType LightType, UINT ShadowResolution);
     static FShadowMemoryUsageInfo GetShadowMemoryUsageInfo();
 };
 

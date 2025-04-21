@@ -8,7 +8,7 @@
 USpotLightComponent::USpotLightComponent()
     : Super()
 {
-    ShadowResource = FShadowResourceFactory::CreateShadowResource(GEngine->graphicDevice.Device, ELightType::SpotLight);
+    ShadowResource = FShadowResourceFactory::CreateShadowResource(GEngine->graphicDevice.Device, ELightType::SpotLight, 1024);
     // FGraphicsDevice& Graphics = GEngine->graphicDevice;
     //
     // LightMap = new FTexture(nullptr, nullptr, 0, 0, L"");
