@@ -320,7 +320,6 @@ PS_OUTPUT mainPS(PS_INPUT input)
         bool bIsShadow = false;
         float shadow = 0;
         float3 LightColor = CalculateSpotLight(SpotLights[k], input.worldPos, input.normal, ViewDir, baseColor.rgb);
-        TotalLight += LightColor;
         if (length(LightColor) > 0.0)
         {
             float4 LightViewPos = WorldToLight(input.worldPos, SpotLights[k].View, SpotLights[k].Proj);
@@ -351,8 +350,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
             }
         }
         float shadowFactor = bIsShadow ? (1.0 - shadow) : 1.0;
-        if (bIsShadow)
-            TotalLight += LightColor * shadowFactor;
+        TotalLight += LightColor * shadowFactor;
     }
     
     float4 FinalColor = float4(TotalLight * baseColor.rgb, baseColor.a * TransparencyScalar);

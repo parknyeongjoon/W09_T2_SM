@@ -391,6 +391,7 @@ void FStaticMeshRenderPass::UpdateLightConstants()
     LightConstant.NumDirectionalLights = DirectionalLightCount;
     
     renderResourceManager->UpdateConstantBuffer(LightConstantBuffer, &LightConstant);
+    Graphics.DeviceContext->VSSetConstantBuffers(1, 1, &LightConstantBuffer);
     Graphics.DeviceContext->PSSetConstantBuffers(2, 1, &LightConstantBuffer);
 }
 
