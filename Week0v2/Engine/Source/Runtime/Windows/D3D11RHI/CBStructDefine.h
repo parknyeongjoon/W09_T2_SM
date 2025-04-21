@@ -138,11 +138,11 @@ struct alignas(16) FMaterialConstants
 
 struct alignas(16) FLightingConstants
 {
-    uint32 NumDirectionalLights; // offset: 0, size: 4
     uint32 NumPointLights; // offset: 4, size: 4
     uint32 NumSpotLights;
     float pad; // offset: 8, size: 8
-    FDirectionalLight DirLights[4];
+    float pad2;
+    FDirectionalLight DirLight;
     FPointLight PointLights[16];
     FSpotLight SpotLights[8];
 };

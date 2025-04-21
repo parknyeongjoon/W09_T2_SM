@@ -1,9 +1,12 @@
 #include "DirectionalLightComponent.h"
 #include "UObject/ObjectFactory.h"
 #include "CoreUObject/UObject/Casts.h"
+#include "EditorEngine.h"
+#include "Math/JungleMath.h"
 
 UDirectionalLightComponent::UDirectionalLightComponent()
 {
+    ShadowResource = FShadowResourceFactory::CreateShadowResource(GEngine->graphicDevice.Device, ELightType::DirectionalLight);
 }
 
 UDirectionalLightComponent::UDirectionalLightComponent(const UDirectionalLightComponent& Other)
@@ -20,6 +23,32 @@ UDirectionalLightComponent::UDirectionalLightComponent(const UDirectionalLightCo
 //    GetOwner()->GetRootComponent()->SetRelativeQuat(FQuat::FromAxisAngle(Axis, Angle));
 //    Direction = _newDir;
 //}
+const float SCENE_RADIUS = 100.0f;
+FMatrix UDirectionalLightComponent::GetViewMatrix() const
+{
+    // 광원 위치 결정 (씬의 중심에서 반대 방향으로)
+    FVector sceneCenter = FVector(0,0,0); // TODO: Scene Center 넣기
+    FVector lightPos = sceneCenter - GetForwardVector() * SCENE_RADIUS;
+    // 광원 뷰 행렬 계산
+    FVector upVector = FVector(0.0f, 0.0f, 1.0f);
+    if (abs(GetForwardVector().Dot(upVector) > 0.9f))
+    {
+        upVector = FVector(0.0f, 0.0f, 1.0f);
+    }
+    
+    FMatrix lightView = JungleMath::CreateViewMatrix(
+        lightPos,
+        sceneCenter,
+        upVector);
+
+    return lightView;
+}
+
+FMatrix UDirectionalLightComponent::GetProjectionMatrix() const
+{
+    // 직교 투영 행렬 계산 (방향광은 직교 투영 사용)
+    return JungleMath::CreateOrthoProjectionMatrix(SCENE_RADIUS * 2,SCENE_RADIUS * 2, 0.1f, 4 * SCENE_RADIUS);
+}
 
 UObject* UDirectionalLightComponent::Duplicate() const
 {

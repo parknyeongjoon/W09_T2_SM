@@ -83,6 +83,9 @@ public:
     FTexture* GetLightMap() const { return LightMap; }
     ID3D11RenderTargetView* GetRTV() const { return LightRTV; }
 
+    virtual FMatrix GetViewMatrix() const { return FMatrix::Identity; }
+    virtual FMatrix GetProjectionMatrix() const { return FMatrix::Identity; }
+
     // virtual void CreateShadowMap();
 
     // duplictae

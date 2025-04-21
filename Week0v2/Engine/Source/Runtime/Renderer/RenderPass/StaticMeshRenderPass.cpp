@@ -319,7 +319,6 @@ void FStaticMeshRenderPass::UpdateLightConstants()
     FGraphicsDevice& Graphics = GEngine->graphicDevice;
 
     FLightingConstants LightConstant;
-    uint32 DirectionalLightCount = 0;
     uint32 PointLightCount = 0;
     uint32 SpotLightCount = 0;
 
@@ -334,9 +333,8 @@ void FStaticMeshRenderPass::UpdateLightConstants()
         {
             continue;
         }
-        UPointLightComponent* PointLightComp = Cast<UPointLightComponent>(Comp);
 
-        if (PointLightComp)
+        if (const UPointLightComponent* PointLightComp = Cast<UPointLightComponent>(Comp))
         {
             LightConstant.PointLights[PointLightCount].Color = PointLightComp->GetLightColor();
             LightConstant.PointLights[PointLightCount].Intensity = PointLightComp->GetIntensity();
@@ -346,20 +344,21 @@ void FStaticMeshRenderPass::UpdateLightConstants()
             PointLightCount++;
             continue;
         }
-
-        UDirectionalLightComponent* DirectionalLightComp = Cast<UDirectionalLightComponent>(Comp);
         
-        if (DirectionalLightComp)
+        if (const UDirectionalLightComponent* DirectionalLightComp = Cast<UDirectionalLightComponent>(Comp))
         {
-            LightConstant.DirLights[DirectionalLightCount].Color = DirectionalLightComp->GetLightColor();
-            LightConstant.DirLights[DirectionalLightCount].Intensity = DirectionalLightComp->GetIntensity();
-            LightConstant.DirLights[DirectionalLightCount].Direction = DirectionalLightComp->GetForwardVector();
-            DirectionalLightCount++;
+            LightConstant.DirLight.Color = DirectionalLightComp->GetLightColor();
+            LightConstant.DirLight.Intensity = DirectionalLightComp->GetIntensity();
+            LightConstant.DirLight.Direction = DirectionalLightComp->GetForwardVector();
+            LightConstant.DirLight.View = DirectionalLightComp->GetViewMatrix();
+            LightConstant.DirLight.Projection = DirectionalLightComp->GetProjectionMatrix();
+
+            ID3D11ShaderResourceView* DirectionalShadowMap = DirectionalLightComp->GetShadowResource()->GetSRV();
+            Graphics.DeviceContext->PSSetShaderResources(11, 1, &DirectionalShadowMap);
             continue;
         }
 
-        USpotLightComponent* SpotLightComp = Cast<USpotLightComponent>(Comp);
-        if (SpotLightComp)
+        if (USpotLightComponent* SpotLightComp = Cast<USpotLightComponent>(Comp))
         {
             LightConstant.SpotLights[SpotLightCount].Position = SpotLightComp->GetComponentLocation();
             LightConstant.SpotLights[SpotLightCount].Color = SpotLightComp->GetLightColor();
@@ -374,6 +373,8 @@ void FStaticMeshRenderPass::UpdateLightConstants()
             continue;
         }
     }
+
+    // Binding ShadowMap
     for (int i = 0; i < 8; ++i)
     {
         if (ShadowMaps[i] == nullptr)
@@ -388,7 +389,6 @@ void FStaticMeshRenderPass::UpdateLightConstants()
     //UE_LOG(LogLevel::Error, "Point : %d, Spot : %d Dir : %d", PointLightCount, SpotLightCount, DirectionalLightCount);
     LightConstant.NumPointLights = PointLightCount;
     LightConstant.NumSpotLights = SpotLightCount;
-    LightConstant.NumDirectionalLights = DirectionalLightCount;
     
     renderResourceManager->UpdateConstantBuffer(LightConstantBuffer, &LightConstant);
     Graphics.DeviceContext->VSSetConstantBuffers(1, 1, &LightConstantBuffer);

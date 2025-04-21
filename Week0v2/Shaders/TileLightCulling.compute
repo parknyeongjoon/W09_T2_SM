@@ -46,12 +46,11 @@ cbuffer FComputeConstants : register(b0){
 
 cbuffer FLightingConstants : register(b1)
 {
-    uint NumDirectionalLights;
     uint NumPointLights;
     uint NumSpotLights;
     float pad;
 
-    FDirectionalLight DirLights[4];
+    FDirectionalLight DirLights;
     FPointLight PointLights[16];
     FSpotLight SpotLights[8];
 };

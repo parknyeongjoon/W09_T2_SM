@@ -18,22 +18,16 @@ FShadowRenderPass::FShadowRenderPass(const FName& InShaderName)
 {
     FGraphicsDevice& Graphics = GEngine->graphicDevice;
     D3D11_BUFFER_DESC cbDesc = {};
-    for (int i = 0; i < 8; ++i)
+    cbDesc.ByteWidth = sizeof(FLightCameraConstant);
+    cbDesc.Usage = D3D11_USAGE_DYNAMIC;
+    cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    cbDesc.MiscFlags = 0;
+    cbDesc.StructureByteStride = 0;
+    HRESULT hr = Graphics.Device->CreateBuffer(&cbDesc, nullptr, &CameraConstantBuffer);
+    if (FAILED(hr))
     {
-        cbDesc = {};
-        cbDesc.ByteWidth = sizeof(FLightCameraConstant);
-        cbDesc.Usage = D3D11_USAGE_DYNAMIC;
-        cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-        cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-        cbDesc.MiscFlags = 0;
-        cbDesc.StructureByteStride = 0;
-        ID3D11Buffer* ConstantBuffer = nullptr;
-        HRESULT hr = Graphics.Device->CreateBuffer(&cbDesc, nullptr, &ConstantBuffer);
-        if (FAILED(hr))
-        {
-            // 에러 처리
-        }
-        CameraConstantBuffers.Add(ConstantBuffer);
+        // 에러 처리
     }
 }
 
@@ -70,7 +64,11 @@ void FShadowRenderPass::Prepare(std::shared_ptr<FViewportClient> InViewportClien
     const FRenderer& Renderer = GEngine->renderer;
     const FGraphicsDevice& Graphics = GEngine->graphicDevice;
 
+    Graphics.DeviceContext->VSSetConstantBuffers(0, 1, &CameraConstantBuffer);
+    
+    ID3D11ShaderResourceView* nullSRV = nullptr;
     Graphics.DeviceContext->PSSetShader(nullptr, nullptr, 0);
+    Graphics.DeviceContext->PSSetShaderResources(0, 1, &nullSRV);
     Graphics.DeviceContext->OMSetDepthStencilState(Renderer.GetDepthStencilState(EDepthStencilState::LessEqual), 0);
 
     Graphics.DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
@@ -83,17 +81,15 @@ void FShadowRenderPass::Prepare(std::shared_ptr<FViewportClient> InViewportClien
     //vp.MinDepth = 0.0f;
     //vp.MaxDepth = 1.0f;
     //Graphics.DeviceContext->RSSetViewports(1, &vp);
-
-    ID3D11ShaderResourceView* nullSRV[1] = { nullptr };
-    Graphics.DeviceContext->PSSetShaderResources(0, 1, nullSRV);
 }
 
 void FShadowRenderPass::Execute(std::shared_ptr<FViewportClient> InViewportClient)
 {
+    Prepare(InViewportClient);
+    
     FRenderer& Renderer = GEngine->renderer;
     FGraphicsDevice& Graphics = GEngine->graphicDevice;
 
-    FMatrix Model = FMatrix::Identity;
     FMatrix View = FMatrix::Identity;
     FMatrix Proj = FMatrix::Identity;
 
@@ -103,81 +99,58 @@ void FShadowRenderPass::Execute(std::shared_ptr<FViewportClient> InViewportClien
     FFrustum CameraFrustum = FFrustum::ExtractFrustum(CameraView * CameraProjection);
 
     FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
-    int curLight = 0;
-    for (ULightComponentBase* Comp : Lights)
+    for (ULightComponentBase* Light : Lights)
     {
-        if (!IsLightInFrustum(Comp, CameraFrustum))
+        if (!IsLightInFrustum(Light, CameraFrustum))
         {
             continue;
         }
-        if (USpotLightComponent* SpotLight = Cast<USpotLightComponent>(Comp))
+
+        if (USpotLightComponent* SpotLight = Cast<USpotLightComponent>(Light))
         {
-            FShadowResource* ShadowResource = SpotLight->GetShadowResource();
-            if (ShadowResource == nullptr)
-                return;
+            Light = SpotLight;
+        }
+        else if (UDirectionalLightComponent* DirectionalLight = Cast<UDirectionalLightComponent>(Light))
+        {
+            Light = DirectionalLight;
+        }
+        else if (UPointLightComponent* PointLight = Cast<UPointLightComponent>(Light))
+        {
+            Light = PointLight;
+        }
 
-            D3D11_VIEWPORT vp = ShadowResource->GetViewport();
-            Graphics.DeviceContext->RSSetViewports(1, &vp);
-            Prepare(InViewportClient);
-            Graphics.DeviceContext->ClearDepthStencilView(
-                ShadowResource->GetDSV(),
-                D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
-                1.0f, 0
-            );
-            //Graphics.DeviceContext->ClearRenderTargetView(SpotLight->GetRTV(), ClearColor);
-            ID3D11ShaderResourceView* nullSRVs[8] = { nullptr };
-            Graphics.DeviceContext->PSSetShaderResources(3, 8, nullSRVs);
-            Graphics.DeviceContext->OMSetRenderTargets(0, nullptr, ShadowResource->GetDSV()); // 렌더 타겟 설정
-            View = SpotLight->GetViewMatrix();//GEngine->GetLevelEditor()->GetActiveViewportClient()->GetViewMatrix();
-            Proj = SpotLight->GetProjectionMatrix();//GEngine->GetLevelEditor()->GetActiveViewportClient()->GetProjectionMatrix();
-            for (const auto& StaticMesh : StaticMeshComponents)
-            {
-                if (!StaticMesh->GetStaticMesh()) continue;
-                const OBJ::FStaticMeshRenderData* renderData = StaticMesh->GetStaticMesh()->GetRenderData();
-                if (renderData == nullptr) continue;
-                Model = StaticMesh->GetWorldMatrix();
-                UpdateCameraConstant(Model, View, Proj, curLight);
-                // VIBuffer Bind
-                const std::shared_ptr<FVBIBTopologyMapping> VBIBTopMappingInfo = Renderer.GetVBIBTopologyMapping(StaticMesh->GetVBIBTopologyMappingName());
-                VBIBTopMappingInfo->Bind();
+        FShadowResource* ShadowResource = Light->GetShadowResource();
+        if (ShadowResource == nullptr)
+            return;
 
-                // If There's No Material Subset
-                if (renderData->MaterialSubsets.Num() == 0)
-                {
-                    Graphics.DeviceContext->DrawIndexed(VBIBTopMappingInfo->GetNumIndices(), 0, 0);
-                }
-
-                // SubSet마다 Material Update 및 Draw
-                for (int subMeshIndex = 0; subMeshIndex < renderData->MaterialSubsets.Num(); ++subMeshIndex)
-                {
-                    const int materialIndex = renderData->MaterialSubsets[subMeshIndex].MaterialIndex;
-
-                    // index draw
-                    const uint64 startIndex = renderData->MaterialSubsets[subMeshIndex].IndexStart;
-                    const uint64 indexCount = renderData->MaterialSubsets[subMeshIndex].IndexCount;
-                    Graphics.DeviceContext->DrawIndexed(indexCount, startIndex, 0);
-                }
-            }
-            ID3D11RenderTargetView* RTV = SpotLight->GetRTV();
-            GEngine->renderer.PrepareShader(TEXT("LightDepth"));
-            Graphics.DeviceContext->OMSetRenderTargets(1, &RTV, nullptr); // 렌더 타겟 설정
-            Graphics.DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-            ID3D11SamplerState* Sampler = Renderer.GetSamplerState(ESamplerType::Point);
-            Graphics.DeviceContext->PSSetSamplers(0, 1, &Sampler);
-            ID3D11ShaderResourceView* ShadowMap = ShadowResource->GetSRV();
-            Graphics.DeviceContext->CopyResource(Graphics.DepthCopyTexture, Graphics.DepthStencilBuffer);
-            Graphics.DeviceContext->PSSetShaderResources(0, 1, &ShadowMap);
-            Graphics.DeviceContext->Draw(4, 0);
-            curLight += 1;
+        D3D11_VIEWPORT vp = ShadowResource->GetViewport();
+        Graphics.DeviceContext->RSSetViewports(1, &vp);
+        Prepare(InViewportClient);
+        Graphics.DeviceContext->ClearDepthStencilView(ShadowResource->GetDSV(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+        //Graphics.DeviceContext->ClearRenderTargetView(SpotLight->GetRTV(), ClearColor);
+        ID3D11ShaderResourceView* nullSRV =  nullptr;
+        Graphics.DeviceContext->PSSetShaderResources(0, 1, &nullSRV);
+        Graphics.DeviceContext->OMSetRenderTargets(0, nullptr, ShadowResource->GetDSV()); // 렌더 타겟 설정
+        
+        if (USpotLightComponent* SpotLight = Cast<USpotLightComponent>(Light))
+        {
+            View = SpotLight->GetViewMatrix();
+            Proj = SpotLight->GetProjectionMatrix();
+            RenderStaticMesh(View, Proj);
+        }
+        if (UDirectionalLightComponent* DirectionalLight = Cast<UDirectionalLightComponent>(Light))
+        {
+            View = DirectionalLight->GetViewMatrix();
+            Proj = DirectionalLight->GetProjectionMatrix();
+            RenderStaticMesh(View, Proj);
         }
     }
     Graphics.DeviceContext->RSSetViewports(1, &curEditorViewportClient->GetD3DViewport());
     Graphics.DeviceContext->OMSetRenderTargets(1, &Graphics.RTVs[0], Graphics.DepthStencilView);
 }
 
-void FShadowRenderPass::UpdateCameraConstant(FMatrix Model, FMatrix View, FMatrix Proj, int index)
+void FShadowRenderPass::UpdateCameraConstant(FMatrix Model, FMatrix View, FMatrix Proj) const
 {
-    const FGraphicsDevice& Graphics = GEngine->graphicDevice;
     FRenderResourceManager* renderResourceManager = GEngine->renderer.GetResourceManager();
 
     FLightCameraConstant CameraConstants;
@@ -185,17 +158,13 @@ void FShadowRenderPass::UpdateCameraConstant(FMatrix Model, FMatrix View, FMatri
     CameraConstants.View = View;
     CameraConstants.Proj = Proj;
 
-    renderResourceManager->UpdateConstantBuffer(CameraConstantBuffers[index], &CameraConstants);
-
-    Graphics.DeviceContext->VSSetConstantBuffers(0, 1, &CameraConstantBuffers[index]);
+    renderResourceManager->UpdateConstantBuffer(CameraConstantBuffer, &CameraConstants);
 }
 
 bool FShadowRenderPass::IsLightInFrustum(ULightComponentBase* LightComponent, const FFrustum& CameraFrustum) const
 {
-    // if (dynamic_cast<UDirectionalLightComponent*>(LightComponent) && !dynamic_cast<USpotLightComponent>(LightComponent))
-    // {
-    //     return true;
-    // }
+    if (Cast<UDirectionalLightComponent>(LightComponent))
+        return true;
 
     // 포인트 라이트 : 구 형태 판단
     if (UPointLightComponent* PointLightComp = Cast<UPointLightComponent>(LightComponent))
@@ -277,4 +246,38 @@ bool FShadowRenderPass::IsSpotLightInFrustum(USpotLightComponent* SpotLightComp,
 
     // 모든 검사에서 프러스텀 내부에 포함된 점이 없으면 false
     return false;
+}
+
+void FShadowRenderPass::RenderStaticMesh(FMatrix View, FMatrix Projection)
+{
+    FMatrix Model = FMatrix::Identity;
+    FRenderer& Renderer = GEngine->renderer;
+    FGraphicsDevice& Graphics = GEngine->graphicDevice;
+    
+    for (const auto& StaticMesh : StaticMeshComponents)
+    {
+        if (!StaticMesh->GetStaticMesh()) continue;
+        const OBJ::FStaticMeshRenderData* renderData = StaticMesh->GetStaticMesh()->GetRenderData();
+        if (renderData == nullptr) continue;
+        Model = StaticMesh->GetWorldMatrix();
+        UpdateCameraConstant(Model, View, Projection);
+        // VIBuffer Bind
+        const std::shared_ptr<FVBIBTopologyMapping> VBIBTopMappingInfo = Renderer.GetVBIBTopologyMapping(StaticMesh->GetVBIBTopologyMappingName());
+        VBIBTopMappingInfo->Bind();
+
+        // If There's No Material Subset
+        if (renderData->MaterialSubsets.Num() == 0)
+        {
+            Graphics.DeviceContext->DrawIndexed(VBIBTopMappingInfo->GetNumIndices(), 0, 0);
+        }
+
+        // SubSet마다 Material Update 및 Draw
+        for (int subMeshIndex = 0; subMeshIndex < renderData->MaterialSubsets.Num(); ++subMeshIndex)
+        {
+            // index draw
+            const uint64 startIndex = renderData->MaterialSubsets[subMeshIndex].IndexStart;
+            const uint64 indexCount = renderData->MaterialSubsets[subMeshIndex].IndexCount;
+            Graphics.DeviceContext->DrawIndexed(indexCount, startIndex, 0);
+        }
+    }
 }

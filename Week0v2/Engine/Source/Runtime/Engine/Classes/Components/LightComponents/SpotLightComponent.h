@@ -68,8 +68,8 @@ public:
     virtual UObject* Duplicate() const override;
     virtual void DuplicateSubObjects(const UObject* Source) override;
     virtual void PostDuplicate() override;
-    FMatrix GetViewMatrix();
-    FMatrix GetProjectionMatrix() const;
+    FMatrix GetViewMatrix() const override;
+    FMatrix GetProjectionMatrix() const override;
 
 public:
     virtual std::shared_ptr<FActorComponentInfo> GetActorComponentInfo() override;

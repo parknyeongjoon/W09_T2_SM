@@ -27,11 +27,12 @@ public:
 private:
     bool IsLightInFrustum(ULightComponentBase* LightComponent, const FFrustum& CameraFrustum) const;
     bool IsSpotLightInFrustum(USpotLightComponent* SpotLightComp, const FFrustum& CameraFrustum) const;
+    void RenderStaticMesh(FMatrix View, FMatrix Projection);
 
 private:
     TArray<ULightComponentBase*> Lights;
     TArray<UStaticMeshComponent*> StaticMeshComponents;
-    void UpdateCameraConstant(FMatrix Model, FMatrix View, FMatrix Proj, int index);
+    void UpdateCameraConstant(FMatrix Model, FMatrix View, FMatrix Proj) const;
     bool bRender = false;
-    TArray< ID3D11Buffer*> CameraConstantBuffers;
+    ID3D11Buffer* CameraConstantBuffer;
 };

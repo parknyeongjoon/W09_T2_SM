@@ -46,6 +46,9 @@ public:
     FVector GetDirection() { return Direction; }
     void SetDirection(FVector _newDir) { Direction = _newDir; }
 
+    FMatrix GetViewMatrix() const override;
+    FMatrix GetProjectionMatrix() const override;
+
 public:
     virtual UObject* Duplicate() const override;
     virtual void DuplicateSubObjects(const UObject* Source) override;
@@ -55,5 +58,3 @@ public:
     virtual std::shared_ptr<FActorComponentInfo> GetActorComponentInfo() override;
     virtual void LoadAndConstruct(const FActorComponentInfo& Info) override;
 };
-
-

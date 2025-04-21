@@ -3,9 +3,11 @@
 
 Texture2D Texture : register(t0);
 Texture2D NormalTexture : register(t1);
-Texture2D SpotLightShadowMap[8] : register(t3);
 
 StructuredBuffer<uint> TileLightIndices : register(t2);
+
+Texture2D SpotLightShadowMap[8] : register(t3);
+Texture2D DirectionalLightShadowMap : register(t11);
 
 #define MAX_POINTLIGHT_COUNT 16
 
@@ -33,6 +35,9 @@ struct FDirectionalLight
     float3 Direction;
     float Intensity;
     float4 Color;
+
+    row_major float4x4 View;
+    row_major float4x4 Projection;
 };
 
 struct FPointLight
@@ -66,12 +71,11 @@ struct FSpotLight
 
 cbuffer FLightingConstants : register(b2)
 {
-    uint NumDirectionalLights;
     uint NumPointLights;
     uint NumSpotLights;
-    float pad;
+    float2 pad2;
 
-    FDirectionalLight DirLights[4];
+    FDirectionalLight DirLight;
     FPointLight PointLights[16];
     FSpotLight SpotLights[8];
 };
@@ -185,7 +189,7 @@ float3 CalculatePointLight(
     float3 specularColor = Light.Color.rgb * Specular * SpecularColor;
 
     return (Diffuse + specularColor) * Light.Intensity * Attenuation;  
-}  
+}
 
 float3 CalculateSpotLight(
     FSpotLight Light,
@@ -237,6 +241,38 @@ float4 WorldToLight(float3 WorldPos, row_major float4x4 View, row_major float4x4
     float4 ViewPos = mul(float4(WorldPos, 1.0), View);
     float4 LightViewPos = mul(ViewPos, Proj);
     return LightViewPos;
+}
+
+float4 CalculateShadow(float3 WorldPos, float3 Normal, float3 LightDir, float4x4 View, float4x4 Projection, Texture2D ShadowMap)
+{
+    float shadow = 0;
+    float4 LightViewPos = WorldToLight(WorldPos, View, Projection);
+            
+    float2 shadowUV = LightViewPos.xy / LightViewPos.w * 0.5 + 0.5;
+    shadowUV.y = 1.0 - shadowUV.y;
+    float worldDepth = LightViewPos.z / LightViewPos.w;
+
+    if(shadowUV.x >= 0 && shadowUV.x <= 1 &&
+        shadowUV.y >= 0 && shadowUV.y <= 1 && 
+        worldDepth >= 0 && worldDepth <= 1)
+    {
+        float bias = max(0.01 * (1.0 - dot(Normal, -LightDir)), 0.001);
+        for (int x = -1; x <= 1; ++x)
+        {
+            for (int y = -1; y <= 1; ++y)
+            {
+                uint textureWidth, textureHeight;
+                ShadowMap.GetDimensions(textureWidth, textureHeight);
+                float2 texelSize = 1.0 / float2(textureWidth, textureHeight);
+                float2 offset = float2(x, y) * texelSize;
+                float sample = ShadowMap.Sample(pointSampler, shadowUV + offset).r;
+                shadow += (worldDepth >= sample + bias) ? 1.0 : 0.0;
+            }
+        }
+        shadow = shadow / 9.0;
+    }
+    
+    return shadow;
 }
 
 PS_OUTPUT mainPS(PS_INPUT input)
@@ -295,12 +331,16 @@ PS_OUTPUT mainPS(PS_INPUT input)
     // TODO : Lit이면 낮은 값 Unlit이면 float3(1.0f,1.0f,1.0f)면 됩니다.
     float3 TotalLight = float3(0.01f,0.01f,0.01f); // 전역 앰비언트  
     if (IsSelectedActor == 1)
-         TotalLight = TotalLight * 10.0f;
+        TotalLight = TotalLight * 10.0f;
     TotalLight += EmissiveColor; // 자체 발광  
-    
-    // 방향광 처리  s
-    for(uint i=0; i<NumDirectionalLights; ++i)  
-        TotalLight += CalculateDirectionalLight(DirLights[i], Normal, ViewDir, baseColor.rgb);  
+
+    float3 DirLightColor = CalculateDirectionalLight(DirLight, Normal, ViewDir, baseColor.rgb);
+    if (length(DirLightColor) > 0.0)
+    {
+        float dirShadow = CalculateShadow(input.worldPos, Normal, DirLight.Direction, DirLight.View, DirLight.Projection, DirectionalLightShadowMap);
+        DirLightColor *= (1 - dirShadow);
+    }
+    TotalLight += DirLightColor;
 
     // 점광 처리  
     for(uint j=0; j<NumPointLights; ++j)
@@ -311,8 +351,9 @@ PS_OUTPUT mainPS(PS_INPUT input)
         {
             break;
         }
-        
-        TotalLight += CalculatePointLight(PointLights[lightIndex], input.worldPos, Normal, ViewDir, baseColor.rgb);
+
+        float3 LightColor = CalculatePointLight(PointLights[lightIndex], input.worldPos, Normal, ViewDir, baseColor.rgb);
+        TotalLight += LightColor;
     }
     
     for (uint k = 0; k < NumSpotLights; ++k)
@@ -356,5 +397,5 @@ PS_OUTPUT mainPS(PS_INPUT input)
     float4 FinalColor = float4(TotalLight * baseColor.rgb, baseColor.a * TransparencyScalar);
     // 최종 색상 
     output.color = FinalColor;
-    return output;  
+    return output;
 }
