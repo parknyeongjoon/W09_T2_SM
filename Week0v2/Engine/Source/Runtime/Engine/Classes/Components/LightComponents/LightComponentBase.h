@@ -3,9 +3,11 @@
 #include "Components/SceneComponent.h"
 #include "Engine/Texture.h"
 #include "UObject/ObjectMacros.h"
-#include <wrl/client.h> // Add this include for Microsoft::WRL::ComPtr
-#include <Light/ShadowResource.h>
-using Microsoft::WRL::ComPtr; // Add this using directive to use ComPtr
+#include "Light/ShadowResourceFactory.h"
+#include "Light/ShadowResource.h"
+
+class FShadowResourceBase;
+
 struct FLightComponentBaseInfo : public FSceneComponentInfo
 {
     DECLARE_ACTORCOMPONENT_INFO(FLightComponentBaseInfo);
@@ -104,8 +106,8 @@ protected:
     ID3D11RenderTargetView* LightRTV = nullptr;
 
 protected:
-    FShadowResource* ShadowResource = nullptr;
+    FShadowResourceBase* ShadowResource = nullptr;
 public:
-    FShadowResource* GetShadowResource() const { return ShadowResource; }
+    FShadowResourceBase* GetShadowResource() const { return ShadowResource; }
 };
 

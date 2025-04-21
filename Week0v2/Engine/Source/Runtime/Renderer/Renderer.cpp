@@ -15,6 +15,7 @@
 #include "RenderPass/GizmoRenderPass.h"
 #include "RenderPass/LineBatchRenderPass.h"
 #include "RenderPass/StaticMeshRenderPass.h"
+#include "Light/ShadowResourceFactory.h"
 
 D3D_SHADER_MACRO FRenderer::GouradDefines[] =
 {
@@ -92,6 +93,9 @@ void FRenderer::Initialize(FGraphicsDevice* graphics)
     ShadowRenderPass = std::make_shared<FShadowRenderPass>(TEXT("Shadow"));
 
     CreateVertexPixelShader(TEXT("LightDepth"), nullptr);
+
+    // init shadow resource
+    FShadowResourceFactory::Initialize(graphics->Device);
 }
 
 void FRenderer::PrepareShader(const FName InShaderName)

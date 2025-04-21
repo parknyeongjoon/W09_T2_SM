@@ -119,7 +119,7 @@ void FShadowRenderPass::Execute(std::shared_ptr<FViewportClient> InViewportClien
             Light = PointLight;
         }
 
-        FShadowResource* ShadowResource = Light->GetShadowResource();
+        FShadowResourceBase* ShadowResource = Light->GetShadowResource();
         if (ShadowResource == nullptr)
             return;
 

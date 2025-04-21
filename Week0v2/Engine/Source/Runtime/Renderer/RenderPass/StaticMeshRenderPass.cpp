@@ -368,7 +368,7 @@ void FStaticMeshRenderPass::UpdateLightConstants()
             LightConstant.SpotLights[SpotLightCount].OuterAngle = SpotLightComp->GetOuterConeAngle();
             LightConstant.SpotLights[SpotLightCount].View = (SpotLightComp->GetViewMatrix());
             LightConstant.SpotLights[SpotLightCount].Proj = (SpotLightComp->GetProjectionMatrix());
-            ShadowMaps[SpotLightCount] = SpotLightComp->GetShadowResource()->GetSRV();
+            ShadowMaps[SpotLightCount] = FShadowResourceFactory::GetShadowCubeArraySRV();
             SpotLightCount++;
             continue;
         }

@@ -260,7 +260,7 @@ void FEditorViewportClient::UpdateViewMatrix()
 {
     if (IsPerspective()) {
         nearPlane = 0.1f;
-        farPlane = 1000000.f;
+        farPlane = 1000.f;
         View = JungleMath::CreateViewMatrix(ViewTransformPerspective.GetLocation(),
             ViewTransformPerspective.GetLocation() + ViewTransformPerspective.GetForwardVector(),
             FVector{ 0.0f,0.0f, 1.0f });
