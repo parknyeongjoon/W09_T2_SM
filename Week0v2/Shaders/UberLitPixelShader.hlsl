@@ -271,7 +271,6 @@ float4 CalculateShadow(float3 WorldPos, float3 Normal, float3 LightDir, float4x4
         }
         shadow = shadow / 9.0;
     }
-    
     return shadow;
 }
 
@@ -289,7 +288,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
         output.color = float4(baseColor.rgb, 1.0);
         return output;
     }
-    
+
 #if LIGHTING_MODEL_GOURAUD
     if (IsSelectedActor == 1)
         input.color = input.color * 5;
@@ -358,40 +357,13 @@ PS_OUTPUT mainPS(PS_INPUT input)
     
     for (uint k = 0; k < NumSpotLights; ++k)
     {
-        bool bIsShadow = false;
-        float shadow = 0;
         float3 LightColor = CalculateSpotLight(SpotLights[k], input.worldPos, input.normal, ViewDir, baseColor.rgb);
         if (length(LightColor) > 0.0)
         {
-            float4 LightViewPos = WorldToLight(input.worldPos, SpotLights[k].View, SpotLights[k].Proj);
-            
-            float2 shadowUV = LightViewPos.xy / LightViewPos.w * 0.5 + 0.5;
-            shadowUV.y = 1.0 - shadowUV.y;
-            float worldDepth = LightViewPos.z / LightViewPos.w;
-
-            if(shadowUV.x >= 0 && shadowUV.x <= 1 &&
-                shadowUV.y >= 0 && shadowUV.y <= 1 && 
-                worldDepth >= 0 && worldDepth <= 1)
-            {
-                float bias = max(0.01 * (1.0 - dot(Normal, -SpotLights[k].Direction)), 0.001);
-                for (int x = -1; x <= 1; ++x)
-                {
-                    for (int y = -1; y <= 1; ++y)
-                    {
-                        uint textureWidth, textureHeight;
-                        SpotLightShadowMap[k].GetDimensions(textureWidth, textureHeight);
-                        float2 texelSize = 1.0 / float2(textureWidth, textureHeight);
-                        float2 offset = float2(x, y) * texelSize;
-                        float sample = SpotLightShadowMap[k].Sample(pointSampler, shadowUV + offset).r;
-                        shadow += (worldDepth >= sample + bias) ? 1.0 : 0.0;
-                    }
-                }
-                shadow = shadow / 9.0;
-                bIsShadow = true;
-            }
+            float spotShadow = CalculateShadow(input.worldPos, Normal, SpotLights[k].Direction, SpotLights[k].View, SpotLights[k].Proj, SpotLightShadowMap[k]);
+            LightColor *= (1 - spotShadow);
         }
-        float shadowFactor = bIsShadow ? (1.0 - shadow) : 1.0;
-        TotalLight += LightColor * shadowFactor;
+        TotalLight += LightColor;
     }
     
     float4 FinalColor = float4(TotalLight * baseColor.rgb, baseColor.a * TransparencyScalar);

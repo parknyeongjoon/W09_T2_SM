@@ -42,7 +42,6 @@ FStaticMeshRenderPass::FStaticMeshRenderPass(const FName& InShaderName)
 
     D3D11_BUFFER_DESC constdesc = {};
     constdesc.ByteWidth = sizeof(FLightingConstants);
-    std::cout<< "sizeof(FLightingConstants): " << sizeof(FLightingConstants) << std::endl;
     constdesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
     constdesc.Usage = D3D11_USAGE_DYNAMIC;
     constdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -114,7 +113,7 @@ void FStaticMeshRenderPass::UpdateComputeResource()
     Graphics.DeviceContext->PSSetShaderResources(2, 1, &TileCullingSRV);
 }
 
-void FStaticMeshRenderPass:: Execute(const std::shared_ptr<FViewportClient> InViewportClient)
+void FStaticMeshRenderPass::Execute(const std::shared_ptr<FViewportClient> InViewportClient)
 {
     FRenderer& Renderer = GEngine->renderer;
     FGraphicsDevice& Graphics = GEngine->graphicDevice;
@@ -135,7 +134,7 @@ void FStaticMeshRenderPass:: Execute(const std::shared_ptr<FViewportClient> InVi
     UpdateComputeResource();
     
     UpdateCameraConstant(InViewportClient);
-    
+
     for (UStaticMeshComponent* staticMeshComp : StaticMesheComponents)
     {
         const FMatrix Model = staticMeshComp->GetWorldMatrix();
@@ -196,8 +195,11 @@ void FStaticMeshRenderPass:: Execute(const std::shared_ptr<FViewportClient> InVi
         }
     }
 
-    ID3D11ShaderResourceView* nullSRV[1] = { nullptr };
-    Graphics.DeviceContext->PSSetShaderResources(2, 1, nullSRV); //쓰고 해제 나중에 이쁘게 뺴기
+    ID3D11ShaderResourceView* nullSRV[8] = { nullptr };
+    Graphics.DeviceContext->PSSetShaderResources(2, 1, &nullSRV[0]); //쓰고 해제 나중에 이쁘게 뺴기
+
+    Graphics.DeviceContext->PSSetShaderResources(3, 8, nullSRV);
+    Graphics.DeviceContext->PSSetShaderResources(11, 1, &nullSRV[0]);
 }
 
 void FStaticMeshRenderPass::UpdateComputeConstants(const std::shared_ptr<FViewportClient> InViewportClient)
