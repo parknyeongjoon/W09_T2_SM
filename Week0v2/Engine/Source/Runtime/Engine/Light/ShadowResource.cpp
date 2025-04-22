@@ -1,7 +1,7 @@
 #include "ShadowResource.h"
 
 UINT FShadowResource::ShadowResolution = 1024; // Default shadow resolution
-
+ID3D11SamplerState* FShadowResource::comparisonSampler = nullptr;
 FShadowResource::FShadowResource(ID3D11Device* Device, ELightType LightType)
     :LightType(LightType)
 {
@@ -150,6 +150,25 @@ FShadowResource::FShadowResource(ID3D11Device* Device, ELightType LightType)
             Viewports.Add(viewport);
         }
         break;
+
+
+        D3D11_SAMPLER_DESC compSampDesc = {};
+        compSampDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
+        compSampDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+        compSampDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+        compSampDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+        compSampDesc.ComparisonFunc = D3D11_COMPARISON_LESS;
+        compSampDesc.BorderColor[0] = 1.0f;
+        compSampDesc.BorderColor[1] = 1.0f;
+        compSampDesc.BorderColor[2] = 1.0f;
+        compSampDesc.BorderColor[3] = 1.0f;
+        compSampDesc.MinLOD = 0;
+        compSampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+       
+        Device->CreateSamplerState(&compSampDesc, &comparisonSampler);
+
+    
     }
     }
 }

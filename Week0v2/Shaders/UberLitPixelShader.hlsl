@@ -128,22 +128,20 @@ struct PS_OUTPUT
     float4 UUID : SV_Target1;
 };
 
-float CalculatePointLightShadow(float3 worldPos, float3 lightPos)
+float CalculatePointLightShadow(float3 worldPos, float3 lightPos,float radius)
 {
-    // 광원에서 픽셀까지의 방향 벡터 계산
     float3 lightToPos = worldPos - lightPos;
-    
-    // 실제 거리 계산
     float currentDistance = length(lightToPos);
-    
-    // 방향 정규화 (큐브맵 샘플링용)
     float3 direction = normalize(lightToPos);
+    float normalizedDistance = currentDistance / radius;
+    // 큰 바이어스 값 사용
+
+    float shadow = CubeShadowMap.SampleCmpLevelZero(shadowSampler, direction, normalizedDistance);
     
-    // 큐브맵에서 저장된 거리 가져오기
-    float closestDepth = CubeShadowMap.Sample(pointSampler, direction).r;
+    return shadow;
     
-    // 그림자 여부 결정 (바이어스 없이)
-    return (currentDistance <= closestDepth) ? 1.0 : 0.0;
+    float bias = 0.1; // 매우 큰 값으로 시작
+    return (normalizedDistance <= shadow + bias) ? 1.0 : 0.0;
 }
 
 float3 CalculateDirectionalLight(  
@@ -337,7 +335,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
         float3 lightColor = CalculatePointLight(PointLights[lightIndex], input.worldPos, Normal, ViewDir, baseColor.rgb);
     
     // 포인트 라이트 그림자 계산
-        float shadow = CalculatePointLightShadow(input.worldPos, PointLights[lightIndex].Position);
+        float shadow = CalculatePointLightShadow(input.worldPos, PointLights[lightIndex].Position,PointLights[lightIndex].Radius);
     
     // 그림자를 조명 계산에 적용
         TotalLight += lightColor * shadow;

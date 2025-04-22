@@ -8,7 +8,7 @@ using Microsoft::WRL::ComPtr;
 struct FShadowResource  
 {  
    static UINT ShadowResolution;
-
+   static ID3D11SamplerState* comparisonSampler;
    ComPtr<ID3D11ShaderResourceView> ShadowSRV; // Example usage of ComPtr  
    TArray<ComPtr<ID3D11DepthStencilView>> ShadowDSVs;  
    ComPtr<ID3D11Texture2D> ShadowTexture;  

@@ -180,7 +180,11 @@ void FShadowRenderPass::Execute(std::shared_ptr<FViewportClient> InViewportClien
                     D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
                     1.0f, 0
                 );
+                
+            
 
+
+                Graphics.DeviceContext->PSSetSamplers(4, 1, &PointLight->GetShadowResource()->comparisonSampler);
                 // 6개 면에 대해 각각 렌더링
                 for (int face = 0; face < 6; face++)
                 {
@@ -189,8 +193,9 @@ void FShadowRenderPass::Execute(std::shared_ptr<FViewportClient> InViewportClien
 
                     // 셰이더 리소스 초기화
                     ID3D11ShaderResourceView* nullSRVs[8] = { nullptr };
+   
                     Graphics.DeviceContext->PSSetShaderResources(3, 8, nullSRVs);
-
+                    Graphics.DeviceContext->PSSetShaderResources(11, 1, &nullSRVs[face]);
                     // 렌더 타겟 설정
                     Graphics.DeviceContext->OMSetRenderTargets(0, nullptr, faceDSV);
 
