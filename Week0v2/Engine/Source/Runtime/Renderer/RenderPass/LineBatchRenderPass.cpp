@@ -68,8 +68,8 @@ void FLineBatchRenderPass::AddRenderObjectsToRenderPass(UWorld* InWorld)
                     FMatrix WorldMatrix = BoxInfo->WorldMatrix;
 
                     FBoundingBox localOBB;
-                    localOBB.min = FVector(-BoxExtent.x, -BoxExtent.y, -BoxExtent.z);
-                    localOBB.max = FVector(BoxExtent.x, BoxExtent.y, BoxExtent.z);
+                    localOBB.min = FVector(-BoxExtent.X, -BoxExtent.Y, -BoxExtent.Z);
+                    localOBB.max = FVector(BoxExtent.X, BoxExtent.Y, BoxExtent.Z);
 
                     PrimitiveBatch.AddOBB(localOBB, Center, WorldMatrix);
                     break;

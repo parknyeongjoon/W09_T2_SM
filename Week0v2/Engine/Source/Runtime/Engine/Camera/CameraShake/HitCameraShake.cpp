@@ -27,8 +27,8 @@ void UHitCameraShake::UpdateShake(float DeltaTime, FVector& OutLoc, FRotator& Ou
     FVector LocalDir = CameraQuatInv.RotateVector(Dir);
 
     // 3. 성분에 비례한 회전
-    float TargetPitch = -LocalDir.x * RotationScale; // 앞에서 맞으면 아래로 밀림 (Pitch 증가)
-    float TargetYaw = LocalDir.y * RotationScale; // 왼쪽에서 맞으면 오른쪽으로 흔들림 (Yaw 증가)
+    float TargetPitch = -LocalDir.X * RotationScale; // 앞에서 맞으면 아래로 밀림 (Pitch 증가)
+    float TargetYaw = LocalDir.Y * RotationScale; // 왼쪽에서 맞으면 오른쪽으로 흔들림 (Yaw 증가)
 
     float CurrentPitch = TargetPitch * Curve * W;
     float CurrentYaw = TargetYaw * Curve * W;

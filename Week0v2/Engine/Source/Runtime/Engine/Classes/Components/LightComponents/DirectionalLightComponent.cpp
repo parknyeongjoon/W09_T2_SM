@@ -123,13 +123,13 @@ FMatrix UDirectionalLightComponent::GetCascadeProjectionMatrix(UINT CascadeIndex
 
     // 경계 박스의 크기 계산
     float paddingFactor = 1.5f;
-    float width = maxExtents.x - minExtents.x * paddingFactor;
-    float height = maxExtents.y - minExtents.y * paddingFactor;
+    float width = maxExtents.X - minExtents.X * paddingFactor;
+    float height = maxExtents.Y - minExtents.Y * paddingFactor;
     float nearPlane, farPlane;
 
     // 중심점 계산
-    float centerX = (maxExtents.x + minExtents.x) * 0.5f;
-    float centerY = (maxExtents.y + minExtents.y) * 0.5f;
+    float centerX = (maxExtents.X + minExtents.X) * 0.5f;
+    float centerY = (maxExtents.Y + minExtents.Y) * 0.5f;
     
     // 새로운 경계 계산
     float halfWidth = width * 0.5f;
@@ -140,16 +140,16 @@ FMatrix UDirectionalLightComponent::GetCascadeProjectionMatrix(UINT CascadeIndex
     float newMaxY = centerY + halfHeight;
     
     // 정밀도를 위해 z 근평면과 원평면을 조정
-    if (minExtents.z < 0) {
-        nearPlane = minExtents.z * ZPaddingFactor;
+    if (minExtents.Z < 0) {
+        nearPlane = minExtents.Z * ZPaddingFactor;
     } else {
-        nearPlane = minExtents.z / ZPaddingFactor;
+        nearPlane = minExtents.Z / ZPaddingFactor;
     }
 
-    if (maxExtents.z < 0) {
-        farPlane = maxExtents.z / ZPaddingFactor;
+    if (maxExtents.Z < 0) {
+        farPlane = maxExtents.Z / ZPaddingFactor;
     } else {
-        farPlane = maxExtents.z * ZPaddingFactor;
+        farPlane = maxExtents.Z * ZPaddingFactor;
     }
 
     return JungleMath::CreateOrthoProjectionMatrix(newMinX, newMaxX, 

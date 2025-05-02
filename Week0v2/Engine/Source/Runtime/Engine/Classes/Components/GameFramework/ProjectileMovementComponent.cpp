@@ -125,7 +125,7 @@ FVector UProjectileMovementComponent::CalculateVelocity(FVector OldVelocity, flo
     
     if (ShouldApplyGravity())
     {
-        NewVelocity.z += GetEffectiveGravityZ() * DeltaTime;
+        NewVelocity.Z += GetEffectiveGravityZ() * DeltaTime;
     }
     
     return LimitVelocity(NewVelocity);
@@ -198,7 +198,7 @@ FVector UProjectileMovementComponent::ComputeMoveDelta(const FVector& InVelocity
     // y = y0 + v * t + 1/2 * a * t^2;
     if (bApplyGravity)
     {
-        Delta.z += 0.5f * GetEffectiveGravityZ() * FMath::Square(DeltaTime);
+        Delta.Z += 0.5f * GetEffectiveGravityZ() * FMath::Square(DeltaTime);
     }
     
     return Delta;

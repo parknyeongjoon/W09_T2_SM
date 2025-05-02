@@ -212,14 +212,14 @@ void AGPlayer::Input(float DeltaTime)
 
         FQuat currentRotation = GetRootComponent()->GetWorldRotation().ToQuaternion();
 
-        float rotationAmountZ = (cameraForward.x <= 0 ? -1.0f : 1.0f) * deltaX * 0.001f;
+        float rotationAmountZ = (cameraForward.X <= 0 ? -1.0f : 1.0f) * deltaX * 0.001f;
         FQuat rotationDeltaZ = FQuat(FVector(0.0f, 0.0f, 1.0f), rotationAmountZ);
         currentRotation = currentRotation * rotationDeltaZ;
         GetRootComponent()->SetRelativeRotation(currentRotation);
 
         GetRootComponent()->GetAttachChildren()[0];
 
-        float rotationAmountY = (cameraUp.z >= 0 ? 1.0f : -1.0f) * deltaY * 0.001f;
+        float rotationAmountY = (cameraUp.Z >= 0 ? 1.0f : -1.0f) * deltaY * 0.001f;
         FQuat rotationDeltaX = FQuat(GetRootComponent()->GetRightVector(), rotationAmountY);
         
         GetRootComponent()->SetRelativeRotation(currentRotation * rotationDeltaX);
@@ -266,7 +266,7 @@ void AGPlayer::Input(float DeltaTime)
         
     if (!MoveDirection.IsNearlyZero())
     {
-        MoveDirection.z = 0.0f;
+        MoveDirection.Z = 0.0f;
         MoveDirection.Normalize();
         SetActorLocation(GetActorLocation() + MoveDirection * MoveSpeed * DeltaTime);
     }

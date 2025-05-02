@@ -92,9 +92,9 @@ protected:
 
     FBoundingBox AABB;
 public:
-    PROPERTY(FVector, RelativeLocation)
-    PROPERTY(FRotator, RelativeRotation)
-    PROPERTY(FVector, RelativeScale)
+    UPROPERTY(FVector, RelativeLocation)
+    UPROPERTY(FRotator, RelativeRotation)
+    UPROPERTY(FVector, RelativeScale)
     
     void AttachToComponent(USceneComponent* InParent);
 

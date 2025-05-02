@@ -210,7 +210,7 @@ void UWorld::DuplicateSeletedActors()
         FString TypeName = DupedActor->GetActorLabel().Left(DupedActor->GetActorLabel().Find("_", ESearchCase::IgnoreCase,ESearchDir::FromEnd));
         DupedActor->SetActorLabel(TypeName);
         FVector DupedLocation = DupedActor->GetActorLocation();
-        DupedActor->SetActorLocation(FVector(DupedLocation.x+50, DupedLocation.y+50, DupedLocation.z));
+        DupedActor->SetActorLocation(FVector(DupedLocation.X+50, DupedLocation.Y+50, DupedLocation.Z));
         Level->GetActors().Add(DupedActor);
         Level->PendingBeginPlayActors.Add(DupedActor);
         newSelectedActors.Add(DupedActor);

@@ -14,9 +14,7 @@ struct FRotator
     float Pitch;
     float Yaw;
 
-    FRotator()
-        : Pitch(0.0f), Yaw(0.0f), Roll(0.0f)
-    {}
+    FRotator() : Roll(0), Pitch(0), Yaw(0) {}
 
     FRotator(float InPitch, float InYaw, float InRoll)
         : Pitch(InPitch), Yaw(InYaw), Roll(InRoll)

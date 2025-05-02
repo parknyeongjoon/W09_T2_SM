@@ -17,9 +17,9 @@ UGizmoCircleComponent::~UGizmoCircleComponent()
 
 bool UGizmoCircleComponent::IntersectsRay(const FVector& rayOrigin, const FVector& rayDir, float& dist)
 {
-    if (rayDir.y == 0) return false; // normal to normal vector of plane
+    if (rayDir.Y == 0) return false; // normal to normal vector of plane
 
-    dist = -rayOrigin.y / rayDir.y;
+    dist = -rayOrigin.Y / rayDir.Y;
 
     FVector intersectionPoint = rayOrigin + rayDir * dist;
     float intersectionToDiscCenterSquared = intersectionPoint.Magnitude();

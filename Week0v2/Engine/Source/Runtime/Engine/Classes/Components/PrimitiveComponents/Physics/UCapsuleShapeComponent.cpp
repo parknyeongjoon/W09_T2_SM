@@ -47,8 +47,8 @@ const FShapeInfo* UCapsuleShapeComponent::GetShapeInfo() const
     // GetUpVector() 문제 있음. (회전 고치기 전이랑 같은 문제)
     FVector Up = FVector(WorldMatrix.M[2][0], WorldMatrix.M[2][1], WorldMatrix.M[2][2]);
     FMatrix RotationMatrix = GetWorldRotation().ToMatrix();
-    float RadiusValue = GetRadius() * FMath::Max(GetWorldScale().x, GetWorldScale().y);
-    float HalfHeightValue = GetHalfHeight() * GetWorldScale().z;
+    float RadiusValue = GetRadius() * FMath::Max(GetWorldScale().X, GetWorldScale().Y);
+    float HalfHeightValue = GetHalfHeight() * GetWorldScale().Z;
 
     ShapeInfo.Center = Center;
     ShapeInfo.WorldMatrix = WorldMatrix;
@@ -79,13 +79,13 @@ void UCapsuleShapeComponent::UpdateBroadAABB()
     FVector BottomMin = Bottom - FVector(R, R, R);
     FVector BottomMax = Bottom + FVector(R, R, R);
 
-    Min.x = FMath::Min(Min.x, BottomMin.x);
-    Min.y = FMath::Min(Min.y, BottomMin.y);
-    Min.z = FMath::Min(Min.z, BottomMin.z);
+    Min.X = FMath::Min(Min.X, BottomMin.X);
+    Min.Y = FMath::Min(Min.Y, BottomMin.Y);
+    Min.Z = FMath::Min(Min.Z, BottomMin.Z);
 
-    Max.x = FMath::Max(Max.x, BottomMax.x);
-    Max.y = FMath::Max(Max.y, BottomMax.y);
-    Max.z = FMath::Max(Max.z, BottomMax.z);
+    Max.X = FMath::Max(Max.X, BottomMax.X);
+    Max.Y = FMath::Max(Max.Y, BottomMax.Y);
+    Max.Z = FMath::Max(Max.Z, BottomMax.Z);
 
     BroadAABB.min = Min;
     BroadAABB.max = Max;
@@ -161,10 +161,10 @@ bool UCapsuleShapeComponent::CollisionCheckWithBox(const UBoxShapeComponent* Oth
     float tmin = 0.0f, tmax = 1.0f;
     for (int i = 0; i < 3; ++i)
     {
-        float p0 = (i == 0 ? L0.x : (i == 1 ? L0.y : L0.z));
-        float di = (i == 0 ? dLocal.x : (i == 1 ? dLocal.y : dLocal.z));
-        float minB = (i == 0 ? -Exp.x : (i == 1 ? -Exp.y : -Exp.z));
-        float maxB = (i == 0 ? Exp.x : (i == 1 ? Exp.y : Exp.z));
+        float p0 = (i == 0 ? L0.X : (i == 1 ? L0.Y : L0.Z));
+        float di = (i == 0 ? dLocal.X : (i == 1 ? dLocal.Y : dLocal.Z));
+        float minB = (i == 0 ? -Exp.X : (i == 1 ? -Exp.Y : -Exp.Z));
+        float maxB = (i == 0 ? Exp.X : (i == 1 ? Exp.Y : Exp.Z));
         if (FMath::Abs(di) < KINDA_SMALL_NUMBER)
         {
             if (p0 < minB || p0 > maxB)
@@ -194,7 +194,7 @@ bool UCapsuleShapeComponent::CollisionCheckWithSphere(const USphereShapeComponen
     FMatrix CapsuleRotation = GetRotationMatrix();
     FVector CapsuleUp = FVector(CapsuleRotation.M[0][1], CapsuleRotation.M[1][1], CapsuleRotation.M[2][1]); // Y축 기준
 
-    float CapsuleHalfHeight = GetHalfHeight() * GetWorldScale().y;
+    float CapsuleHalfHeight = GetHalfHeight() * GetWorldScale().Y;
     float CapsuleRadius = GetRadius() * GetWorldScale().MaxValue();
 
     // 캡슐의 세그먼트 끝점 계산
@@ -218,7 +218,7 @@ bool UCapsuleShapeComponent::CollisionCheckWithCapsule(const UCapsuleShapeCompon
     FMatrix RotA = GetRotationMatrix();
     FVector UpA(RotA.M[0][1], RotA.M[1][1], RotA.M[2][1]);
 
-    float HalfHeightA = GetHalfHeight() * GetWorldScale().y;
+    float HalfHeightA = GetHalfHeight() * GetWorldScale().Y;
     float RadiusA = GetRadius() * GetWorldScale().MaxValue();
 
     FVector TopA = CenterA + UpA * HalfHeightA;
@@ -228,7 +228,7 @@ bool UCapsuleShapeComponent::CollisionCheckWithCapsule(const UCapsuleShapeCompon
     FMatrix RotB = OtherCapsule->GetRotationMatrix();
     FVector UpB(RotB.M[0][1], RotB.M[1][1], RotB.M[2][1]);
 
-    float HalfHeightB = OtherCapsule->GetHalfHeight() * OtherCapsule->GetWorldScale().y;
+    float HalfHeightB = OtherCapsule->GetHalfHeight() * OtherCapsule->GetWorldScale().Y;
     float RadiusB = OtherCapsule->GetRadius() * OtherCapsule->GetWorldScale().MaxValue();
 
     FVector TopB = CenterB + UpB * HalfHeightB;

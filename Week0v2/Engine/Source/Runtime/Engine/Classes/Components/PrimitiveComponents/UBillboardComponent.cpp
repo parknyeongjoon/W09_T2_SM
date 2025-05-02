@@ -85,7 +85,7 @@ FMatrix UBillboardComponent::CreateBillboardMatrix()
 	
 	FVector worldLocation = GetWorldLocation();
 	FVector worldScale = RelativeScale;
-	FMatrix S = FMatrix::CreateScaleMatrix(worldScale.x, worldScale.y, worldScale.z);
+	FMatrix S = FMatrix::CreateScaleMatrix(worldScale.X, worldScale.Y, worldScale.Z);
 	FMatrix R = LookAtCamera;
 	FMatrix T = FMatrix::CreateTranslationMatrix(worldLocation);
 	FMatrix M = S * R * T;
@@ -166,9 +166,9 @@ bool UBillboardComponent::CheckPickingOnNDC(const TArray<FVector>& checkQuad, fl
 	int screenX = mousePos.x;
 	int screenY = mousePos.y;
     FMatrix projectionMatrix = GetEngine()->GetLevelEditor()->GetActiveViewportClient()->GetProjectionMatrix();
-	pickPosition.x = ((2.0f * screenX / viewport.Width) - 1);
-	pickPosition.y = -((2.0f * screenY / viewport.Height) - 1);
-	pickPosition.z = 1.0f; // Near Plane
+	pickPosition.X = ((2.0f * screenX / viewport.Width) - 1);
+	pickPosition.Y = -((2.0f * screenY / viewport.Height) - 1);
+	pickPosition.Z = 1.0f; // Near Plane
 
 	FMatrix M = CreateBillboardMatrix();
     FMatrix V = GEngine->GetLevelEditor()->GetActiveViewportClient()->GetViewMatrix();;
@@ -182,7 +182,7 @@ bool UBillboardComponent::CheckPickingOnNDC(const TArray<FVector>& checkQuad, fl
 	float avgZ = 0.0f;
 	for (int i = 0; i < checkQuad.Num(); i++)
 	{
-		FVector4 v = FVector4(checkQuad[i].x, checkQuad[i].y, checkQuad[i].z, 1.0f);
+		FVector4 v = FVector4(checkQuad[i].X, checkQuad[i].Y, checkQuad[i].Z, 1.0f);
 		FVector4 clipPos = FMatrix::TransformVector(v, MVP);
 		
 		if (clipPos.w != 0)	clipPos = clipPos/clipPos.w;
@@ -196,13 +196,13 @@ bool UBillboardComponent::CheckPickingOnNDC(const TArray<FVector>& checkQuad, fl
 
 	avgZ /= checkQuad.Num();
 
-	if (pickPosition.x >= minX && pickPosition.x <= maxX &&
-		pickPosition.y >= minY && pickPosition.y <= maxY)
+	if (pickPosition.X >= minX && pickPosition.X <= maxX &&
+		pickPosition.Y >= minY && pickPosition.Y <= maxY)
 	{
 		float A = P.M[2][2];  // Projection Matrix의 A값 (Z 변환 계수)
 		float B = P.M[3][2];  // Projection Matrix의 B값 (Z 변환 계수)
 
-		float z_view_pick = (pickPosition.z - B) / A; // 마우스 클릭 View 공간 Z
+		float z_view_pick = (pickPosition.Z - B) / A; // 마우스 클릭 View 공간 Z
 		float z_view_billboard = (avgZ - B) / A; // Billboard View 공간 Z
 
 		hitDistance = 1000.0f;

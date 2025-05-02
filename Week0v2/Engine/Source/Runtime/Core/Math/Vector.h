@@ -8,6 +8,8 @@
 
 struct FMath;
 
+#define SMALL_NUMBER         (1.e-8f)
+
 #include "Serialization/Archive.h"
 struct FVector2D
 {
@@ -50,8 +52,9 @@ struct FVector2D
 // 3D 벡터
 struct FVector
 {
-    float x, y, z;
-    FVector(float _x = 0, float _y = 0, float _z = 0) : x(_x), y(_y), z(_z) {}
+    float X, Y, Z;
+    FVector() : X(0), Y(0), Z(0) {}
+    FVector(float _x, float _y, float _z) : X(_x), Y(_y), Z(_z) {}
 
     FVector operator+(const FVector& Other) const;
     FVector& operator+=(const FVector& Other);
@@ -74,9 +77,9 @@ struct FVector
     {
         switch (Index)
         {
-        case 0: return x;
-        case 1: return y;
-        case 2: return z;
+        case 0: return X;
+        case 1: return Y;
+        case 2: return Z;
         default: throw std::out_of_range("FVector index out of range");
         }
     }
@@ -85,50 +88,50 @@ struct FVector
     {
         switch (Index)
         {
-        case 0: return x;
-        case 1: return y;
-        case 2: return z;
+        case 0: return X;
+        case 1: return Y;
+        case 2: return Z;
         default: throw std::out_of_range("FVector index out of range");
         }
     }
 
     // 벡터 내적
     float Dot(const FVector& other) const {
-        return x * other.x + y * other.y + z * other.z;
+        return X * other.X + Y * other.Y + Z * other.Z;
     }
 
     // 벡터 크기
     float Magnitude() const {
-        return std::sqrt(x * x + y * y + z * z);
+        return std::sqrt(X * X + Y * Y + Z * Z);
     }
 
     float MagnitudeSquared() const
     {
-        return x * x + y * y + z * z;
+        return X * X + Y * Y + Z * Z;
     }
 
     // 벡터 정규화
     FVector Normalize() const {
         float mag = Magnitude();
-        return (mag > 0) ? FVector(x / mag, y / mag, z / mag) : FVector(0, 0, 0);
+        return (mag > 0) ? FVector(X / mag, Y / mag, Z / mag) : FVector(0, 0, 0);
     }
     FVector Cross(const FVector& Other) const
     {
         return FVector{
-            y * Other.z - z * Other.y,
-            z * Other.x - x * Other.z,
-            x * Other.y - y * Other.x
+            Y * Other.Z - Z * Other.Y,
+            Z * Other.X - X * Other.Z,
+            X * Other.Y - Y * Other.X
         };
     }
     FVector Min(const FVector& Other) const
     {
         FVector result = *this;
-        if (x > Other.x)
-            result.x = Other.x;
-        if (y > Other.y)
-            result.y = Other.y;
-        if (z > Other.z)
-            result.z = Other.z;
+        if (X > Other.X)
+            result.X = Other.X;
+        if (Y > Other.Y)
+            result.Y = Other.Y;
+        if (Z > Other.Z)
+            result.Z = Other.Z;
 
         return result;
     }
@@ -136,25 +139,25 @@ struct FVector
     FVector Max(const FVector& Other) const
     {
         FVector result = *this;
-        if (x < Other.x)
-            result.x = Other.x;
-        if (y < Other.y)
-            result.y = Other.y;
-        if (z < Other.z)
-            result.z = Other.z;
+        if (X < Other.X)
+            result.X = Other.X;
+        if (Y < Other.Y)
+            result.Y = Other.Y;
+        if (Z < Other.Z)
+            result.Z = Other.Z;
 
         return result;
     }
 
     float MaxValue() const
     {
-        float result = x >= y ? x : y;
-        result = result >= z ? result : z;
+        float result = X >= Y ? X : Y;
+        result = result >= Z ? result : Z;
         return result;
     }
 
     bool operator==(const FVector& other) const {
-        return (x == other.x && y == other.y && z == other.z);
+        return (X == other.X && Y == other.Y && Z == other.Z);
     }
 
     float Distance(const FVector& other) const {
@@ -163,7 +166,7 @@ struct FVector
     }
     DirectX::XMFLOAT3 ToXMFLOAT3() const
     {
-        return DirectX::XMFLOAT3(x, y, z);
+        return DirectX::XMFLOAT3(X, Y, Z);
     }
 
     FVector ClampMaxSize(float MaxSize) const
@@ -177,7 +180,7 @@ struct FVector
         if (VSq > MaxSize * MaxSize)
         {
             const float Scale = MaxSize * FMath::InvSqrt(VSq);
-            return { x * Scale, y * Scale, z * Scale };
+            return { X * Scale, Y * Scale, Z * Scale };
         }
         else
         {
@@ -186,19 +189,24 @@ struct FVector
     }
     void Serialize(FArchive& Ar) const
     {
-        Ar << x << y << z;
+        Ar << X << Y << Z;
     }
 
     void Deserialize(FArchive& Ar)
     {
-        Ar >> x >> y >> z;
+        Ar >> X >> Y >> Z;
     }
     bool IsNearlyZero(float Tolerance = KINDA_SMALL_NUMBER) const
     {
-        return FMath::Abs(x) <= Tolerance &&
-            FMath::Abs(y) <= Tolerance &&
-            FMath::Abs(z) <= Tolerance;
+        return FMath::Abs(X) <= Tolerance &&
+            FMath::Abs(Y) <= Tolerance &&
+            FMath::Abs(Z) <= Tolerance;
     }
+
+    FVector GetClampedToMaxSize(float MaxSize) const;
+    bool IsZero() const;
+    FVector GetSafeNormal(float Tolerance = SMALL_NUMBER) const;
+    
     static const FVector ZeroVector;
     static const FVector OneVector;
     static const FVector UpVector;
@@ -207,59 +215,98 @@ struct FVector
 };
 inline FVector FVector::operator+(const FVector& Other) const
 {
-    return { x + Other.x, y + Other.y, z + Other.z };
+    return { X + Other.X, Y + Other.Y, Z + Other.Z };
 }
 
 inline FVector& FVector::operator+=(const FVector& Other)
 {
-    x += Other.x; y += Other.y; z += Other.z;
+    X += Other.X; Y += Other.Y; Z += Other.Z;
     return *this;
 }
 
 inline FVector FVector::operator-(const FVector& Other) const
 {
-    return { x - Other.x, y - Other.y, z - Other.z };
+    return { X - Other.X, Y - Other.Y, Z - Other.Z };
 }
 
 inline FVector& FVector::operator-=(const FVector& Other)
 {
-    x -= Other.x; y -= Other.y; z -= Other.z;
+    X -= Other.X; Y -= Other.Y; Z -= Other.Z;
     return *this;
 }
 
 inline FVector FVector::operator*(const FVector& Other) const
 {
-    return { x * Other.x, y * Other.y, z * Other.z };
+    return { X * Other.X, Y * Other.Y, Z * Other.Z };
 }
 
 inline FVector FVector::operator*(float Scalar) const
 {
-    return { x * Scalar, y * Scalar, z * Scalar };
+    return { X * Scalar, Y * Scalar, Z * Scalar };
 }
 
 inline FVector& FVector::operator*=(float Scalar)
 {
-    x *= Scalar; y *= Scalar; z *= Scalar;
+    X *= Scalar; Y *= Scalar; Z *= Scalar;
     return *this;
 }
 
 inline FVector FVector::operator/(const FVector& Other) const
 {
-    return { x / Other.x, y / Other.y, z / Other.z };
+    return { X / Other.X, Y / Other.Y, Z / Other.Z };
 }
 
 inline FVector FVector::operator/(float Scalar) const
 {
-    return { x / Scalar, y / Scalar, z / Scalar };
+    return { X / Scalar, Y / Scalar, Z / Scalar };
 }
 
 inline FVector& FVector::operator/=(float Scalar)
 {
-    x /= Scalar; y /= Scalar; z /= Scalar;
+    X /= Scalar; Y /= Scalar; Z /= Scalar;
     return *this;
 }
 
 inline FVector FVector::operator-() const
 {
-    return { -x, -y, -z };
+    return { -X, -Y, -Z };
+}
+
+inline FVector FVector::GetClampedToMaxSize(float MaxSize) const
+{
+    const float SquaredSum = X * X + Y * Y + Z * Z;
+    const float MaxSizeSq = MaxSize * MaxSize;
+
+    // 길이가 최대보다 크면
+    if (SquaredSum > MaxSizeSq && MaxSizeSq > 0.f)
+    {
+        // 스케일 비율 = MaxSize / 현재 길이
+        const float Scale = MaxSize / FMath::Sqrt(SquaredSum);
+        return FVector(X * Scale, Y * Scale, Z * Scale);
+    }
+
+    // 아니면 원본 그대로
+    return *this;
+}
+
+inline bool FVector::IsZero() const
+{
+    return X==0.f && Y==0.f && Z==0.f;
+}
+
+inline FVector FVector::GetSafeNormal(float Tolerance) const
+{
+    const float SquareSum = X*X + Y*Y + Z*Z;
+
+    // Not sure if it's safe to add tolerance in there. Might introduce too many errors
+    if (SquareSum == 1.f)
+    {
+        return *this;
+    }
+    else if (SquareSum < Tolerance)
+    {
+        return ZeroVector;
+    }
+    const float Scale = FMath::InvSqrt(SquareSum);
+    return {X * Scale, Y * Scale, Z * Scale};
 }

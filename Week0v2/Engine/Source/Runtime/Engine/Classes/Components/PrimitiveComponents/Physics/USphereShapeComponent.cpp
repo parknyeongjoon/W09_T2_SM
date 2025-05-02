@@ -161,9 +161,9 @@ bool USphereShapeComponent::CollisionCheckWithBox(const UBoxShapeComponent* Othe
     float z = d.Dot(AxisBZ);
 
     // 4. Box 내부로의 투영점(Clamp)
-    float cx = FMath::Clamp(x, -ExtentB.x, ExtentB.x);
-    float cy = FMath::Clamp(y, -ExtentB.y, ExtentB.y);
-    float cz = FMath::Clamp(z, -ExtentB.z, ExtentB.z);
+    float cx = FMath::Clamp(x, -ExtentB.X, ExtentB.X);
+    float cy = FMath::Clamp(y, -ExtentB.Y, ExtentB.Y);
+    float cz = FMath::Clamp(z, -ExtentB.Z, ExtentB.Z);
 
     // 5. 최근접 점과 Sphere 중심 거리 계산
     float dx = x - cx;
@@ -199,7 +199,7 @@ bool USphereShapeComponent::CollisionCheckWithCapsule(const UCapsuleShapeCompone
     FMatrix CapsuleRotation = OtherCapsule->GetRotationMatrix();
     FVector CapsuleUp = FVector(CapsuleRotation.M[0][1], CapsuleRotation.M[1][1], CapsuleRotation.M[2][1]); // Y축 기준
 
-    float CapsuleHalfHeight = OtherCapsule->GetHalfHeight() * OtherCapsule->GetWorldScale().y;
+    float CapsuleHalfHeight = OtherCapsule->GetHalfHeight() * OtherCapsule->GetWorldScale().Y;
     float CapsuleRadius = OtherCapsule->GetRadius() * OtherCapsule->GetWorldScale().MaxValue();
 
     // 캡슐의 세그먼트 끝점 계산

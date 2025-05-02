@@ -151,9 +151,9 @@ std::string FSceneMgr::SerializeSceneData(const SceneData& sceneData)
     for (const auto& [Id, Obj] : sceneData.Primitives)
     {
         USceneComponent* primitive = static_cast<USceneComponent*>(Obj);
-        std::vector<float> Location = { primitive->GetWorldLocation().x,primitive->GetWorldLocation().y,primitive->GetWorldLocation().z };
+        std::vector<float> Location = { primitive->GetWorldLocation().X,primitive->GetWorldLocation().Y,primitive->GetWorldLocation().Z };
         std::vector<float> Rotation = { primitive->GetWorldRotation().Pitch,primitive->GetWorldRotation().Yaw,primitive->GetWorldRotation().Roll };
-        std::vector<float> Scale = { primitive->GetWorldScale().x,primitive->GetWorldScale().y,primitive->GetWorldScale().z };
+        std::vector<float> Scale = { primitive->GetWorldScale().X,primitive->GetWorldScale().Y,primitive->GetWorldScale().Z };
 
         std::string primitiveName = *primitive->GetName();
         size_t pos = primitiveName.rfind('_');
@@ -171,7 +171,7 @@ std::string FSceneMgr::SerializeSceneData(const SceneData& sceneData)
     for (const auto& [id, camera] : sceneData.Cameras)
     {
         UCameraComponent* cameraComponent = static_cast<UCameraComponent*>(camera);
-        TArray<float> Location = { cameraComponent->GetWorldLocation().x, cameraComponent->GetWorldLocation().y, cameraComponent->GetWorldLocation().z };
+        TArray<float> Location = { cameraComponent->GetWorldLocation().X, cameraComponent->GetWorldLocation().Y, cameraComponent->GetWorldLocation().Z };
         TArray<float> Rotation = { 0.0f, cameraComponent->GetWorldRotation().Yaw, cameraComponent->GetWorldRotation().Roll };
         float FOV = cameraComponent->GetFOV();
         float nearClip = cameraComponent->GetNearClip();

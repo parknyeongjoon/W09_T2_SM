@@ -201,8 +201,8 @@ private:
     void WriteIniFile(const FString& filePath, const TMap<FString, FString>& config);
 	
 public:
-    PROPERTY(int32, CameraSpeedSetting)
-    PROPERTY(float, GridSize)
+    UPROPERTY(int32, CameraSpeedSetting)
+    UPROPERTY(float, GridSize)
     float GetCameraSpeedScalar() const { return CameraSpeedScalar * 0.1f; };
     void SetCameraSpeedScalar(float value);
 

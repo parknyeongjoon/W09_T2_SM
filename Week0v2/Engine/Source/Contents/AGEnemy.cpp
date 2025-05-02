@@ -150,7 +150,7 @@ void AGEnemy::Move()
 
 void AGEnemy::OnCollision(const UPrimitiveComponent* Other)
 {
-    Velocity = FVector(-Velocity.x, -Velocity.y,0);
+    Velocity = FVector(-Velocity.X, -Velocity.Y,0);
     if (Cast<USphereShapeComponent>(Other))
     {
         OnHit.Broadcast();

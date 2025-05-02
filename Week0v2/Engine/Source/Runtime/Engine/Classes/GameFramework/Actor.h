@@ -10,7 +10,6 @@
 #include "ActorInfo.h"
 #include "Components/PrimitiveComponents/PrimitiveComponent.h"
 #include "Core/Delegates/DelegateCombination.h"
-#include "Components/PrimitiveComponents/PrimitiveComponent.h"
 
 class UActorComponent;
 

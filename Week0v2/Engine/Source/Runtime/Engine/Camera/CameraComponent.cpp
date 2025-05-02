@@ -112,7 +112,7 @@ void UCameraComponent::MoveRight(float _Value)
 
 void UCameraComponent::MoveUp(float _Value)
 {
-    RelativeLocation.z += _Value * GetEngine()->GetLevelEditor()->GetActiveViewportClient()->GetCameraSpeedScalar();
+    RelativeLocation.Z += _Value * GetEngine()->GetLevelEditor()->GetActiveViewportClient()->GetCameraSpeedScalar();
 }
 
 void UCameraComponent::RotateYaw(float _Value)

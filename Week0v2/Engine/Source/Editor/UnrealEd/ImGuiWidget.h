@@ -46,12 +46,12 @@ struct FImGuiWidget
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
         ImGui::PushFont(boldFont);
         if (ImGui::Button("I", buttonSize))
-            values.x = resetValue;
+            values.X = resetValue;
         ImGui::PopFont();
         ImGui::PopStyleColor(3);
 
         ImGui::SameLine();
-        bValueChanged |= ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, "%.2f");
+        bValueChanged |= ImGui::DragFloat("##X", &values.X, 0.1f, 0.0f, 0.0f, "%.2f");
         ImGui::PopItemWidth();
         ImGui::SameLine(0, 5);
 
@@ -61,12 +61,12 @@ struct FImGuiWidget
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
         ImGui::PushFont(boldFont);
         if (ImGui::Button("II", buttonSize))
-            values.y = resetValue;
+            values.Y = resetValue;
         ImGui::PopFont();
         ImGui::PopStyleColor(3);
 
         ImGui::SameLine();
-        bValueChanged |= ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.2f");
+        bValueChanged |= ImGui::DragFloat("##Y", &values.Y, 0.1f, 0.0f, 0.0f, "%.2f");
         ImGui::PopItemWidth();
         ImGui::SameLine(0, 5);
 
@@ -76,12 +76,12 @@ struct FImGuiWidget
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
         ImGui::PushFont(boldFont);
         if (ImGui::Button("III", buttonSize))
-            values.z = resetValue;
+            values.Z = resetValue;
         ImGui::PopFont();
         ImGui::PopStyleColor(3);
 
         ImGui::SameLine();
-        bValueChanged |= ImGui::DragFloat("##Z", &values.z, 0.1f, 0.0f, 0.0f, "%.2f");
+        bValueChanged |= ImGui::DragFloat("##Z", &values.Z, 0.1f, 0.0f, 0.0f, "%.2f");
         ImGui::PopItemWidth();
 
         ImGui::PopStyleVar(2);

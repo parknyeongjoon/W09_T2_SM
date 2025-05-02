@@ -16,9 +16,9 @@ struct FQuat
 		float SinHalfAngle = sinf(HalfAngle);
 		float CosHalfAngle = cosf(HalfAngle);
 
-		x = Axis.x * SinHalfAngle;
-		y = Axis.y * SinHalfAngle;
-		z = Axis.z * SinHalfAngle;
+		x = Axis.X * SinHalfAngle;
+		y = Axis.Y * SinHalfAngle;
+		z = Axis.Z * SinHalfAngle;
 		w = CosHalfAngle;
 	}
 
@@ -40,7 +40,7 @@ struct FQuat
 	FVector RotateVector(const FVector& Vec) const
 	{
 		// 벡터를 쿼터니언으로 변환
-		FQuat vecQuat(0.0f, Vec.x, Vec.y, Vec.z);
+		FQuat vecQuat(0.0f, Vec.X, Vec.Y, Vec.Z);
 		// 회전 적용 (q * vec * q^-1)
 		FQuat conjugate = FQuat(w, -x, -y, -z);  // 쿼터니언의 켤레
 		FQuat result = *this * vecQuat * conjugate;
@@ -70,7 +70,7 @@ struct FQuat
 	{
 		float halfAngle = Angle * 0.5f;
 		float sinHalfAngle = sinf(halfAngle);
-		return FQuat(cosf(halfAngle), Axis.x * sinHalfAngle, Axis.y * sinHalfAngle, Axis.z * sinHalfAngle);
+		return FQuat(cosf(halfAngle), Axis.X * sinHalfAngle, Axis.Y * sinHalfAngle, Axis.Z * sinHalfAngle);
 	}
 
 	static FQuat CreateRotation(float roll, float pitch, float yaw)

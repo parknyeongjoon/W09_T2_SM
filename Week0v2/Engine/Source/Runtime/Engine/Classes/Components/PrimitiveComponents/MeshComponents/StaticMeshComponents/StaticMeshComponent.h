@@ -42,7 +42,7 @@ public:
     virtual void PostDuplicate() override;
     virtual void TickComponent(float DeltaTime) override;
 
-    PROPERTY(int, selectedSubMeshIndex);
+    UPROPERTY(int, selectedSubMeshIndex);
 
 
 

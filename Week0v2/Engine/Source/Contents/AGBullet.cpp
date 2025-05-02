@@ -62,8 +62,8 @@ void AGBullet::Tick(float DeltaTime)
     if (!Velocity.IsNearlyZero())
     {
         FVector Drag = Velocity * -DragCoefficient * Velocity.Magnitude();
-        float DragZ = Velocity.z * -0.5f * FMath::Abs(Velocity.z);
-        Drag.z += DragZ * Dt;
+        float DragZ = Velocity.Z * -0.5f * FMath::Abs(Velocity.Z);
+        Drag.Z += DragZ * Dt;
         Velocity += Drag * Dt;
     }
 
@@ -84,7 +84,7 @@ void AGBullet::Fire(FVector FirePosition, FVector FireDirection, float Power)
     SetActorLocation(Position);
     FVector V = FireDirection.Normalize();
     V *= 10;
-    V.z += 5;
+    V.Z += 5;
     Velocity = V.Normalize() * Power;
 
     bFired = true;
@@ -103,7 +103,7 @@ void AGBullet::OnHit(const UPrimitiveComponent* Other)
         if (Other->GetAttachParent()->GetRelativeScale().z > 20)
             Velocity *= -1;
         else
-            Velocity.z *= -1;
+            Velocity.Z *= -1;
     }
     else
         ReturnToPool();

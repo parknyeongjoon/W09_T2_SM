@@ -59,7 +59,7 @@ public:
     float GetFogDensity() const { return FogDensity; }
     float GetFogStart() const { return FogStart; }
     float GetFogEnd() const { return FogEnd; }
-    float GetFogZPosition() const { return GetWorldLocation().z; }
+    float GetFogZPosition() const { return GetWorldLocation().Z; }
     float GetFogBaseHeight() const { return FogBaseHeight; }
     float GetHeightFallOff() const { return HeightFallOff; }
     bool IsHeightFog() const { return bIsHeightFog; }

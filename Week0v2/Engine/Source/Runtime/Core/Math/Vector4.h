@@ -5,7 +5,7 @@
 struct FVector4 {
     float x, y, z, w;
     FVector4(float _x = 0, float _y = 0, float _z = 0, float _a = 0) : x(_x), y(_y), z(_z), w(_a) {}
-    FVector4(FVector v, float w) : x(v.x), y(v.y), z(v.z), w(w) {}
+    FVector4(FVector v, float w) : x(v.X), y(v.Y), z(v.Z), w(w) {}
 
     FVector4 operator-(const FVector4& other) const {
         return FVector4(x - other.x, y - other.y, z - other.z, w - other.w);

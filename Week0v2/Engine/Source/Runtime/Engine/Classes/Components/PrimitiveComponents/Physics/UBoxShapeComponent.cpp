@@ -86,14 +86,14 @@ void UBoxShapeComponent::UpdateBroadAABB()
 
     FVector LocalCorners[8] =
     {
-        FVector(-Extent.x, -Extent.y, -Extent.z),
-        FVector(Extent.x, -Extent.y, -Extent.z),
-        FVector(Extent.x,  Extent.y, -Extent.z),
-        FVector(-Extent.x,  Extent.y, -Extent.z),
-        FVector(-Extent.x, -Extent.y,  Extent.z),
-        FVector(Extent.x, -Extent.y,  Extent.z),
-        FVector(Extent.x,  Extent.y,  Extent.z),
-        FVector(-Extent.x,  Extent.y,  Extent.z)
+        FVector(-Extent.X, -Extent.Y, -Extent.Z),
+        FVector(Extent.X, -Extent.Y, -Extent.Z),
+        FVector(Extent.X,  Extent.Y, -Extent.Z),
+        FVector(-Extent.X,  Extent.Y, -Extent.Z),
+        FVector(-Extent.X, -Extent.Y,  Extent.Z),
+        FVector(Extent.X, -Extent.Y,  Extent.Z),
+        FVector(Extent.X,  Extent.Y,  Extent.Z),
+        FVector(-Extent.X,  Extent.Y,  Extent.Z)
     };
 
     //FMatrix RotationMatrix = GetRotationMatrix();
@@ -106,13 +106,13 @@ void UBoxShapeComponent::UpdateBroadAABB()
     {
         FVector WorldCorner = FMatrix::TransformVector(LocalCorners[i], RotationMatrix);
 
-        Min.x = FMath::Min(Min.x, WorldCorner.x);
-        Min.y = FMath::Min(Min.y, WorldCorner.y);
-        Min.z = FMath::Min(Min.z, WorldCorner.z);
+        Min.X = FMath::Min(Min.X, WorldCorner.X);
+        Min.Y = FMath::Min(Min.Y, WorldCorner.Y);
+        Min.Z = FMath::Min(Min.Z, WorldCorner.Z);
 
-        Max.x = FMath::Max(Max.x, WorldCorner.x);
-        Max.y = FMath::Max(Max.y, WorldCorner.y);
-        Max.z = FMath::Max(Max.z, WorldCorner.z);
+        Max.X = FMath::Max(Max.X, WorldCorner.X);
+        Max.Y = FMath::Max(Max.Y, WorldCorner.Y);
+        Max.Z = FMath::Max(Max.Z, WorldCorner.Z);
     }
 
     BroadAABB.min = Center + Min;
@@ -260,9 +260,9 @@ bool UBoxShapeComponent::CollisionCheckWithSphere(const USphereShapeComponent* O
     float z = d.Dot(AxisBZ);
 
     // 4. Box 내부로의 투영점(Clamp)
-    float cx = FMath::Clamp(x, -ExtentB.x, ExtentB.x);
-    float cy = FMath::Clamp(y, -ExtentB.y, ExtentB.y);
-    float cz = FMath::Clamp(z, -ExtentB.z, ExtentB.z);
+    float cx = FMath::Clamp(x, -ExtentB.X, ExtentB.X);
+    float cy = FMath::Clamp(y, -ExtentB.Y, ExtentB.Y);
+    float cz = FMath::Clamp(z, -ExtentB.Z, ExtentB.Z);
 
     // 5. 최근접 점과 Sphere 중심 거리 계산
     float dx = x - cx;
@@ -318,10 +318,10 @@ bool UBoxShapeComponent::CollisionCheckWithCapsule(const UCapsuleShapeComponent*
     float tmin = 0.0f, tmax = 1.0f;
     for (int i = 0; i < 3; ++i)
     {
-        float p0 = (i == 0 ? L0.x : (i == 1 ? L0.y : L0.z));
-        float di = (i == 0 ? dLocal.x : (i == 1 ? dLocal.y : dLocal.z));
-        float minB = (i == 0 ? -Exp.x : (i == 1 ? -Exp.y : -Exp.z));
-        float maxB = (i == 0 ? Exp.x : (i == 1 ? Exp.y : Exp.z));
+        float p0 = (i == 0 ? L0.X : (i == 1 ? L0.Y : L0.Z));
+        float di = (i == 0 ? dLocal.X : (i == 1 ? dLocal.Y : dLocal.Z));
+        float minB = (i == 0 ? -Exp.X : (i == 1 ? -Exp.Y : -Exp.Z));
+        float maxB = (i == 0 ? Exp.X : (i == 1 ? Exp.Y : Exp.Z));
         if (FMath::Abs(di) < KINDA_SMALL_NUMBER)
         {
             if (p0 < minB || p0 > maxB)

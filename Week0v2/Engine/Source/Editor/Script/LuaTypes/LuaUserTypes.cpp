@@ -78,9 +78,9 @@ void LuaTypes::FBindLua<FVector>::Bind(sol::table& Table)
         sol::constructors<FVector(), FVector(float, float, float)>(),
 
         // Member variables
-        LUA_BIND_MEMBER(&FVector::x),
-        LUA_BIND_MEMBER(&FVector::y),
-        LUA_BIND_MEMBER(&FVector::z),
+        LUA_BIND_MEMBER(&FVector::X),
+        LUA_BIND_MEMBER(&FVector::Y),
+        LUA_BIND_MEMBER(&FVector::Z),
 
         // Operators
         sol::meta_function::equal_to, &FVector::operator==,

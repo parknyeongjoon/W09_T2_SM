@@ -8,9 +8,9 @@ using namespace DirectX;
 FVector4 JungleMath::ConvertV3ToV4(FVector vec3)
 {
 	FVector4 newVec4;
-	newVec4.x = vec3.x;
-	newVec4.y = vec3.y;
-	newVec4.z = vec3.z;
+	newVec4.x = vec3.X;
+	newVec4.y = vec3.Y;
+	newVec4.z = vec3.Z;
 	return newVec4;
 }
 
@@ -20,10 +20,10 @@ FMatrix JungleMath::CreateModelMatrix(FVector translation, FVector rotation, FVe
 {
     FMatrix Translation = FMatrix::CreateTranslationMatrix(translation);
 
-    FMatrix Rotation = FMatrix::CreateRotationMatrix(rotation.x, rotation.y, rotation.z);
+    FMatrix Rotation = FMatrix::CreateRotationMatrix(rotation.X, rotation.Y, rotation.Z);
     //FMatrix Rotation = JungleMath::EulerToQuaternion(rotation).ToMatrix();
 
-    FMatrix Scale = FMatrix::CreateScaleMatrix(scale.x, scale.y, scale.z);
+    FMatrix Scale = FMatrix::CreateScaleMatrix(scale.X, scale.Y, scale.Z);
     return Scale * Rotation * Translation;
 }
 
@@ -31,7 +31,7 @@ FMatrix JungleMath::CreateModelMatrix(FVector translation, FQuat rotation, FVect
 {
     FMatrix Translation = FMatrix::CreateTranslationMatrix(translation);
     FMatrix Rotation = rotation.ToMatrix();
-    FMatrix Scale = FMatrix::CreateScaleMatrix(scale.x, scale.y, scale.z);
+    FMatrix Scale = FMatrix::CreateScaleMatrix(scale.X, scale.Y, scale.Z);
     return Scale * Rotation * Translation;
 }
 FMatrix JungleMath::CreateViewMatrix(FVector eye, FVector target, FVector up)
@@ -41,9 +41,9 @@ FMatrix JungleMath::CreateViewMatrix(FVector eye, FVector target, FVector up)
     FVector yAxis = zAxis.Cross(xAxis);
 
     FMatrix View;
-    View.M[0][0] = xAxis.x; View.M[0][1] = yAxis.x; View.M[0][2] = zAxis.x; View.M[0][3] = 0;
-    View.M[1][0] = xAxis.y; View.M[1][1] = yAxis.y; View.M[1][2] = zAxis.y; View.M[1][3] = 0;
-    View.M[2][0] = xAxis.z; View.M[2][1] = yAxis.z; View.M[2][2] = zAxis.z; View.M[2][3] = 0;
+    View.M[0][0] = xAxis.X; View.M[0][1] = yAxis.X; View.M[0][2] = zAxis.X; View.M[0][3] = 0;
+    View.M[1][0] = xAxis.Y; View.M[1][1] = yAxis.Y; View.M[1][2] = zAxis.Y; View.M[1][3] = 0;
+    View.M[2][0] = xAxis.Z; View.M[2][1] = yAxis.Z; View.M[2][2] = zAxis.Z; View.M[2][3] = 0;
     View.M[3][0] = -xAxis.Dot(eye);
     View.M[3][1] = -yAxis.Dot(eye);
     View.M[3][2] = -zAxis.Dot(eye);
@@ -133,9 +133,9 @@ FVector JungleMath::FVectorRotate(FVector& origin, const FVector& rotation)
 }
 FQuat JungleMath::EulerToQuaternion(const FVector& eulerDegrees)
 {
-    float yaw = DegToRad(eulerDegrees.z);   // Z축 Yaw
-    float pitch = DegToRad(eulerDegrees.y); // Y축 Pitch
-    float roll = DegToRad(eulerDegrees.x);  // X축 Roll
+    float yaw = DegToRad(eulerDegrees.Z);   // Z축 Yaw
+    float pitch = DegToRad(eulerDegrees.Y); // Y축 Pitch
+    float roll = DegToRad(eulerDegrees.X);  // X축 Roll
 
     float halfYaw = yaw * 0.5f;
     float halfPitch = pitch * 0.5f;
@@ -168,23 +168,23 @@ FVector JungleMath::QuaternionToEuler(const FQuat& quat)
     // Yaw (Z 축 회전)
     float sinYaw = 2.0f * (q.w * q.z + q.x * q.y);
     float cosYaw = 1.0f - 2.0f * (q.y * q.y + q.z * q.z);
-    euler.z = RadToDeg(atan2(sinYaw, cosYaw));
+    euler.Z = RadToDeg(atan2(sinYaw, cosYaw));
 
     // Pitch (Y 축 회전, 짐벌락 방지)
     float sinPitch = 2.0f * (q.w * q.y - q.z * q.x);
     if (fabs(sinPitch) >= 1.0f)
     {
-        euler.y = RadToDeg(static_cast<float>(copysign(PI / 2, sinPitch))); // 🔥 Gimbal Lock 방지
+        euler.Y = RadToDeg(static_cast<float>(copysign(PI / 2, sinPitch))); // 🔥 Gimbal Lock 방지
     }
     else
     {
-        euler.y = RadToDeg(asin(sinPitch));
+        euler.Y = RadToDeg(asin(sinPitch));
     }
 
     // Roll (X 축 회전)
     float sinRoll = 2.0f * (q.w * q.x + q.y * q.z);
     float cosRoll = 1.0f - 2.0f * (q.x * q.x + q.y * q.y);
-    euler.x = RadToDeg(atan2(sinRoll, cosRoll));
+    euler.X = RadToDeg(atan2(sinRoll, cosRoll));
     return euler;
 }
 
@@ -269,9 +269,9 @@ FVector JungleMath::FVectorRotate(FVector& origin, const FRotator& InRotation)
 
 FMatrix JungleMath::CreateRotationMatrix(FVector rotation)
 {
-    XMVECTOR quatX = XMQuaternionRotationAxis(XMVectorSet(1, 0, 0, 0), DegToRad(rotation.x));
-    XMVECTOR quatY = XMQuaternionRotationAxis(XMVectorSet(0, 1, 0, 0), DegToRad(rotation.y));
-    XMVECTOR quatZ = XMQuaternionRotationAxis(XMVectorSet(0, 0, 1, 0), DegToRad(rotation.z));
+    XMVECTOR quatX = XMQuaternionRotationAxis(XMVectorSet(1, 0, 0, 0), DegToRad(rotation.X));
+    XMVECTOR quatY = XMQuaternionRotationAxis(XMVectorSet(0, 1, 0, 0), DegToRad(rotation.Y));
+    XMVECTOR quatZ = XMQuaternionRotationAxis(XMVectorSet(0, 0, 1, 0), DegToRad(rotation.Z));
 
     XMVECTOR rotationQuat = XMQuaternionMultiply(quatZ, XMQuaternionMultiply(quatY, quatX));
     rotationQuat = XMQuaternionNormalize(rotationQuat);  // 정규화 필수
