@@ -28,5 +28,4 @@ struct FSkeletalMeshData
     TArray<FBoneInfo> Bones;
     TArray<FSkinnedVertex> Vertices;
     TArray<uint32> Indices;
-    TArray<FMatrix> FinalBoneMatrices;
 };
