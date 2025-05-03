@@ -4,7 +4,7 @@
 
 #include "UnrealEd/EditorViewportClient.h"
 
-#include "Engine/FLoaderOBJ.h"
+#include "Engine/Loader/OBJ/FLoaderOBJ.h"
 
 UCubeComp::UCubeComp()
 {

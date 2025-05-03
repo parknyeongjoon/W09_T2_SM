@@ -4,7 +4,7 @@
 #include "BaseGizmos/TransformGizmo.h"
 #include "Camera/CameraComponent.h"
 #include "LevelEditor/SLevelEditor.h"
-#include "Engine/FLoaderOBJ.h"
+#include "Engine/Loader/OBJ/FLoaderOBJ.h"
 #include "UObject/UObjectIterator.h"
 #include "Level.h"
 #include "Actors/ADodge.h"

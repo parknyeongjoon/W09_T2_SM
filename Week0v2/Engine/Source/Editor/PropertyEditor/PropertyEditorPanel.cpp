@@ -1,7 +1,7 @@
 #include "PropertyEditorPanel.h"
 
 #include "Engine/World.h"
-#include "Engine/FLoaderOBJ.h"
+#include "Engine/Loader/OBJ/FLoaderOBJ.h"
 #include "UnrealEd/ImGuiWidget.h"
 
 #include "Components/GameFramework/ProjectileMovementComponent.h"

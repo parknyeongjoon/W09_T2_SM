@@ -1,7 +1,7 @@
 #include "StaticMesh.h"
 
 #include "LaunchEngineLoop.h"
-#include "Engine/FLoaderOBJ.h"
+#include "Engine/Loader/OBJ/FLoaderOBJ.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/RenderResourceManager.h"
 #include "UObject/ObjectFactory.h"

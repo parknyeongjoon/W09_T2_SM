@@ -1,7 +1,7 @@
 #include "ControlEditorPanel.h"
 
 #include "Engine/World.h"
-#include "Engine/FLoaderOBJ.h"
+#include "Engine/Loader/OBJ/FLoaderOBJ.h"
 #include "Engine/StaticMeshActor.h"
 #include "LevelEditor/SLevelEditor.h"
 #include "tinyfiledialogs/tinyfiledialogs.h"

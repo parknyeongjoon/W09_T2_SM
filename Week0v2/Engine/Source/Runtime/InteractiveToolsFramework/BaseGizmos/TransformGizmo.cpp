@@ -3,7 +3,7 @@
 #include "GizmoCircleComponent.h"
 #include "GizmoRectangleComponent.h"
 #include "Engine/World.h"
-#include "Engine/FLoaderOBJ.h"
+#include "Engine/Loader/OBJ/FLoaderOBJ.h"
 #include "UnrealEd/EditorPlayer.h"
 
 extern UEngine* GEngine;

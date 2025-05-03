@@ -4,7 +4,7 @@
 #include "Launch/EditorEngine.h"
 #include "UObject/ObjectFactory.h"
 #include "UnrealEd/PrimitiveBatch.h"
-#include "Classes/Engine/FLoaderOBJ.h"
+#include "Engine/Loader/OBJ/FLoaderOBJ.h"
 #include "Components/Mesh/StaticMesh.h"
 
 UStaticMeshComponent::UStaticMeshComponent(const UStaticMeshComponent& Other)

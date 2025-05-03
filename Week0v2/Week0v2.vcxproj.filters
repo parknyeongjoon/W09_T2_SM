@@ -308,7 +308,6 @@
       <Filter>Engine\Source\Runtime\Engine\Classes\Components\Material</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Source\Runtime\CoreUObject\UObject\Casts.cpp" />
-    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Engine\FLoaderOBJ.cpp" />
     <ClCompile Include="Engine\Source\Editor\LevelEditor\SLevelEditor.cpp" />
     <ClCompile Include="Engine\Source\Editor\PropertyEditor\ViewportTypePanel.cpp" />
     <ClCompile Include="Engine\Source\Editor\UnrealEd\ImGuiWidget.cpp" />
@@ -451,6 +450,8 @@
     <ClInclude Include="Engine\Source\Runtime\Windows\RawInput.h" />
     <ClInclude Include="Engine\Source\Runtime\Windows\WindowsCursor.h" />
     <ClInclude Include="Engine\Source\Runtime\Windows\WindowsPlatformTime.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Engine\Loader\FBX\FLoaderFBX.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Engine\Loader\OBJ\FLoaderOBJ.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Source\ThirdParty\DirectXTK\Include\DDSTextureLoader.h" />
@@ -474,7 +475,6 @@
       <Filter>Engine\Source\Runtime\Engine\Classes\Components\Material</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Source\Runtime\CoreUObject\UObject\Casts.h" />
-    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Engine\FLoaderOBJ.h" />
     <ClInclude Include="Engine\Source\Runtime\Core\Delegates\Delegate.h" />
     <ClInclude Include="Engine\Source\Runtime\Core\Delegates\DelegateCombination.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\ViewportClient.h" />
@@ -649,6 +649,8 @@
     <ClCompile Include="Engine\Source\Runtime\Windows\RawInput.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Windows\WindowsCursor.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Windows\WindowsPlatformTime.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Engine\Loader\FBX\FLoaderFBX.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Engine\Loader\OBJ\FLoaderOBJ.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\ShaderHeaders\GConstantBuffers.hlsli" />

@@ -1,6 +1,6 @@
 #include "SphereComp.h"
 
-#include "Engine/FLoaderOBJ.h"
+#include "Engine/Loader/OBJ/FLoaderOBJ.h"
 #include "UnrealEd/EditorViewportClient.h"
 
 

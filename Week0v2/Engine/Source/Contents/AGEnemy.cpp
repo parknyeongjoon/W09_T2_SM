@@ -4,7 +4,7 @@
 #include "GameManager.h"
 #include "Components/Material/Material.h"
 #include "Components/PrimitiveComponents/MeshComponents/StaticMeshComponents/StaticMeshComponent.h"
-#include "Engine/FLoaderOBJ.h"
+#include "Engine/Loader/OBJ/FLoaderOBJ.h"
 
 AGEnemy::AGEnemy()
 {
