@@ -450,6 +450,7 @@
     <ClInclude Include="Engine\Source\Runtime\Windows\RawInput.h" />
     <ClInclude Include="Engine\Source\Runtime\Windows\WindowsCursor.h" />
     <ClInclude Include="Engine\Source\Runtime\Windows\WindowsPlatformTime.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Engine\EngineTypes\SkeletalMesh.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Engine\Loader\FBX\FLoaderFBX.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Engine\Loader\OBJ\FLoaderOBJ.h" />
   </ItemGroup>
