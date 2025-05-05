@@ -11,7 +11,6 @@ struct FObjMaterialInfo;
 struct FMatrix;
 class UStaticMeshComponent;
 
-
 class FStaticMeshRenderPass : public FBaseRenderPass
 {
 public:
@@ -38,7 +37,7 @@ private:
 private:
     bool IsLightInFrustum(ULightComponentBase* LightComponent, const FFrustum& CameraFrustum) const;
     bool IsSpotLightInFrustum(USpotLightComponent* SpotLightComp, const FFrustum& CameraFrustum) const;
-private:        
+private:
     TArray<ULightComponentBase*> LightComponents;
     TArray<UStaticMeshComponent*> StaticMesheComponents;
     ID3D11ShaderResourceView* DummyWhiteTextureSRV = nullptr;

@@ -1,7 +1,6 @@
 #include "LaunchEngineLoop.h"
 
 #include "ImGuiManager.h"
-#include "Engine/Loader/FBX/FLoaderFBX.h"
 #include "LevelEditor/SLevelEditor.h"
 #include "PropertyEditor/ViewportTypePanel.h"
 #include "Renderer/Renderer.h"
@@ -49,18 +48,6 @@ int32 FEngineLoop::Init(HINSTANCE hInstance)
 
     UpdateUI();
 
-    // test
-    FSkeletalMeshData data;
-    FLoaderFBX loader = FLoaderFBX();
-    if (loader.LoadSkeletalMesh("Contents/FBX/Wizard.fbx", data))
-    {
-        UE_LOG(LogLevel::Display, "load skeletal mesh succeed");
-    }
-    else
-    {
-        UE_LOG(LogLevel::Display, "load skeletal mesh succeed");
-    }
-    
     return 0;
 }
 

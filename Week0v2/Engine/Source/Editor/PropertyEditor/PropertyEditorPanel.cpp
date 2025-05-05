@@ -25,6 +25,7 @@
 #include <shellapi.h> // ShellExecute 관련 함수 정의 포함
 
 #include "LaunchEngineLoop.h"
+#include "Components/PrimitiveComponents/MeshComponents/USkeletalMeshComponent.h"
 #include "Light/ShadowMapAtlas.h"
 #include "UnrealEd/EditorViewportClient.h"
 #include "UObject/FunctionRegistry.h"
@@ -611,11 +612,14 @@ void PropertyEditorPanel::Render()
 
     // TODO: 추후에 RTTI를 이용해서 프로퍼티 출력하기
     if (PickedActor)
+    {
         if (UStaticMeshComponent* StaticMeshComponent = PickedActor->GetComponentByClass<UStaticMeshComponent>())
         {
             RenderForStaticMesh(StaticMeshComponent);
             RenderForMaterial(StaticMeshComponent);
         }
+    }
+        
 
     if (PickedActor && PickedComponent && PickedComponent->IsA<UBillboardComponent>())
     {
@@ -721,7 +725,6 @@ void PropertyEditorPanel::Render()
         }
 
     }
-
     if (PickedActor && PickedComponent && PickedComponent->IsA<UProjectileMovementComponent>())
     {
         UProjectileMovementComponent* ProjectileComp = Cast<UProjectileMovementComponent>(PickedComponent);
@@ -743,7 +746,6 @@ void PropertyEditorPanel::Render()
             ImGui::TreePop();
         }
     }
-
     if (PickedActor && PickedComponent && PickedComponent->IsA<URotatingMovementComponent>())
     {
         URotatingMovementComponent* RotatingComp = Cast<URotatingMovementComponent>(PickedComponent);

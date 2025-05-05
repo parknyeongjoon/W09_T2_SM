@@ -10,6 +10,7 @@
 #include "RenderPass/DebugDepthRenderPass.h"
 #include "RenderPass/FogRenderPass.h"
 #include "RenderPass/ShadowRenderPass.h"
+#include "RenderPass/SkeletalMeshRenderPass.h"
 
 class FLetterBoxRenderPass;
 struct FLetterBoxConstants;
@@ -112,6 +113,7 @@ private:
     std::shared_ptr<FLetterBoxRenderPass> LetterBoxRenderPass;
     std::shared_ptr<FBlurRenderPass> BlurRenderPass;
     std::shared_ptr<FFinalRenderPass> FinalRenderPass;
+    std::shared_ptr<FSkeletalMeshRenderPass> SkeletalRenderPass;
 
     ERasterizerState CurrentRasterizerState = ERasterizerState::SolidBack;
     EViewModeIndex CurrentViewMode = VMI_Lit_Goroud;

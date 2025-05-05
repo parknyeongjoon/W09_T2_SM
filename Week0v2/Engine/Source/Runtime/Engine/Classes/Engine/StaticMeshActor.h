@@ -11,6 +11,10 @@ class AStaticMeshActor : public AActor
 public:
     AStaticMeshActor();
     AStaticMeshActor(const AStaticMeshActor& Other);
+    
+    void BeginPlay() override;
+    void Tick(float DeltaTime) override;
+    void Destroyed() override;
 
     UStaticMeshComponent* GetStaticMeshComponent() const { return StaticMeshComponent; }
 

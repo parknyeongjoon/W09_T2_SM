@@ -107,6 +107,9 @@ void FRenderer::Initialize(FGraphicsDevice* graphics)
     
     CreateVertexPixelShader(TEXT("Final"), nullptr);
     FinalRenderPass = std::make_shared<FFinalRenderPass>(TEXT("Final"));
+
+    CreateVertexPixelShader(TEXT("Skeletal"), nullptr);
+    SkeletalRenderPass = std::make_shared<FSkeletalMeshRenderPass>(TEXT("Skeletal"));
 }
 
 void FRenderer::PrepareShader(const FName InShaderName)
@@ -315,6 +318,9 @@ void FRenderer::Render(const std::shared_ptr<FEditorViewportClient>& ActiveViewp
     FadeRenderPass->Prepare(ActiveViewport);
     FadeRenderPass->Execute(ActiveViewport);
 
+    // SkeletalRenderPass->Prepare(ActiveViewport);
+    // SkeletalRenderPass->Execute(ActiveViewport);
+
     FinalRenderPass->Prepare(ActiveViewport);
     FinalRenderPass->Execute(ActiveViewport);
 
@@ -338,6 +344,7 @@ void FRenderer::ClearRenderObjects() const
     ShadowRenderPass->ClearRenderObjects();
     FadeRenderPass->ClearRenderObjects();
     LetterBoxRenderPass->ClearRenderObjects();
+    SkeletalRenderPass->ClearRenderObjects();
 }
 
 void FRenderer::SetViewMode(const EViewModeIndex evi)
@@ -410,7 +417,7 @@ void FRenderer::AddRenderObjectsToRenderPass() const
     LineBatchRenderPass->AddRenderObjectsToRenderPass();
     FadeRenderPass->AddRenderObjectsToRenderPass();
     LetterBoxRenderPass->AddRenderObjectsToRenderPass();
-    
+    SkeletalRenderPass->AddRenderObjectsToRenderPass();
 }
 
 void FRenderer::MappingVSPSInputLayout(const FName InShaderProgramName, FName VSName, FName PSName, FName InInputLayoutName)
