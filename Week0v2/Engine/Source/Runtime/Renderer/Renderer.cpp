@@ -318,8 +318,8 @@ void FRenderer::Render(const std::shared_ptr<FEditorViewportClient>& ActiveViewp
     FadeRenderPass->Prepare(ActiveViewport);
     FadeRenderPass->Execute(ActiveViewport);
 
-    // SkeletalRenderPass->Prepare(ActiveViewport);
-    // SkeletalRenderPass->Execute(ActiveViewport);
+    SkeletalRenderPass->Prepare(ActiveViewport);
+    SkeletalRenderPass->Execute(ActiveViewport);
 
     FinalRenderPass->Prepare(ActiveViewport);
     FinalRenderPass->Execute(ActiveViewport);

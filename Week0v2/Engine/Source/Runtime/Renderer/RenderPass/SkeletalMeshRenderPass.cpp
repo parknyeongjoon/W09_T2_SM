@@ -58,11 +58,20 @@ void FSkeletalMeshRenderPass::Execute(std::shared_ptr<FViewportClient> InViewpor
     FRenderer& Renderer = FEngineLoop::Renderer;
     FGraphicsDevice& Graphics = FEngineLoop::GraphicDevice;
     
-    UpdateConstant();
+    FMatrix View = FMatrix::Identity;
+    FMatrix Proj = FMatrix::Identity;
+    std::shared_ptr<FEditorViewportClient> curEditorViewportClient = std::dynamic_pointer_cast<FEditorViewportClient>(InViewportClient);
+    if (curEditorViewportClient != nullptr)
+    {
+        View = curEditorViewportClient->GetViewMatrix();
+        Proj = curEditorViewportClient->GetProjectionMatrix();
+    }
 
     for (USkeletalMeshComponent* SkeletalMeshComponent : SkeletalMeshComponents)
     {
         const FMatrix Model = SkeletalMeshComponent->GetWorldMatrix();
+        UpdateMatrixConstants(SkeletalMeshComponent, View, Proj);
+        
         std::shared_ptr<FEditorViewportClient> currEditorViewportClient = std::dynamic_pointer_cast<FEditorViewportClient>(InViewportClient);
 
         // AABB
@@ -81,7 +90,7 @@ void FSkeletalMeshRenderPass::Execute(std::shared_ptr<FViewportClient> InViewpor
         FSkeletalMeshData* meshData = SkeletalMeshComponent->GetSkeletalMesh()->GetMeshData();
         
         // VIBuffer Bind
-        const std::shared_ptr<FVBIBTopologyMapping> VBIBTopMappingInfo = Renderer.GetVBIBTopologyMapping(SkeletalMeshComponent->GetVBIBTopologyMappingName());
+        const std::shared_ptr<FVBIBTopologyMapping> VBIBTopMappingInfo = Renderer.GetVBIBTopologyMapping(meshData->Name);
         VBIBTopMappingInfo->Bind();
 
         // Draw
@@ -120,6 +129,20 @@ void FSkeletalMeshRenderPass::CreateConstant()
     // constdesc.Usage = D3D11_USAGE_DYNAMIC;
     // constdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
     // Graphics.Device->CreateBuffer(&constdesc, nullptr, &LightConstantBuffer);
+}
+
+void FSkeletalMeshRenderPass::UpdateMatrixConstants(USkeletalMeshComponent* InSkeletalMeshComponent, const FMatrix& InView, const FMatrix& InProjection)
+{
+    FRenderResourceManager* renderResourceManager = FEngineLoop::Renderer.GetResourceManager();
+    // MVP Update
+    const FMatrix Model = InSkeletalMeshComponent->GetWorldMatrix();
+    const FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(Model));
+    
+    FSkeletalMatrixConstant MatrixConstants;
+    MatrixConstants.Model = Model;
+    MatrixConstants.ViewProj = InView * InProjection;
+    MatrixConstants.MInverseTranspose = NormalMatrix;
+    renderResourceManager->UpdateConstantBuffer(TEXT("FSkeletalMatrixConstant"), &MatrixConstants);
 }
 
 void FSkeletalMeshRenderPass::UpdateConstant()

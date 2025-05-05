@@ -26,6 +26,13 @@ bool FLoaderFBX::LoadSkeletalMesh(const FString& FilePath, FSkeletalMeshData& Ou
     Importer->Import(Scene);
     Importer->Destroy();
 
+    // 씬 전체 삼각화
+    FbxGeometryConverter GeometryConverter(Manager);
+    if (!GeometryConverter.Triangulate(Scene, true, false))
+    {
+        UE_LOG(LogLevel::Error, TEXT("FBX Scene 삼각화에 실패했습니다."));
+    }
+
     // 3) Skeleton 파싱
     TArray<FBoneInfo> Bones;
     ParseSkeletonRecursive(Scene->GetRootNode(), Bones, -1);

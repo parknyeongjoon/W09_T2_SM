@@ -203,6 +203,13 @@ struct alignas(16) FMatrixConstants
     FVector pad0; // offset: 196, size: 12
 };
 
+struct alignas(16) FSkeletalMatrixConstant
+{
+    FMatrix Model;                // offset 0,   size 64
+    FMatrix ViewProj;             // offset 64,  size 64
+    FMatrix MInverseTranspose;    // offset 128, size 64
+};
+
 struct alignas(16) FConstatntBufferActor
 {
     FVector4 UUID; // offset: 0, size: 16

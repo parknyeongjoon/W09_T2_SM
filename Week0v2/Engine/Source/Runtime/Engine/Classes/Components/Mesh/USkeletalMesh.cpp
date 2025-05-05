@@ -19,7 +19,7 @@ void USkeletalMesh::CreateRenderBuffers() const
     FRenderResourceManager* renderResourceManager = FEngineLoop::Renderer.GetResourceManager();
     VertexBuffer = renderResourceManager->CreateDynamicVertexBuffer<FSkinnedVertex>(SkeletalMeshData.Vertices);
     renderResourceManager->AddOrSetVertexBuffer(SkeletalMeshData.Name, VertexBuffer);
-    FEngineLoop::Renderer.MappingVBTopology(SkeletalMeshData.Name, SkeletalMeshData.Name, sizeof(FVertexSimple), verticeNum);
+    FEngineLoop::Renderer.MappingVBTopology(SkeletalMeshData.Name, SkeletalMeshData.Name, sizeof(FSkinnedVertex), verticeNum);
     
     const uint32 indexNum = SkeletalMeshData.Indices.Num();
     if (indexNum > 0)

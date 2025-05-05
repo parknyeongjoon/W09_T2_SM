@@ -1,5 +1,5 @@
 
-cbuffer FMatrixConstants : register(b0)
+cbuffer FSkeletalMatrixConstant : register(b0)
 {
     row_major float4x4 Model;
     row_major float4x4 ViewProj;
