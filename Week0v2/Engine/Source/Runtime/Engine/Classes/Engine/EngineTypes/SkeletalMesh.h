@@ -19,13 +19,19 @@ struct FSkinnedVertex
     FVector Position;
     FVector Normal;
     FVector2D UV;
-    int BoneIndices[4] = { -1, -1, -1, -1 };
-    float BoneWeights[4] = { 0.f, 0.f, 0.f, 0.f };
+};
+
+struct FSkinWeight
+{
+    int   BoneIndices[4];
+    float BoneWeights[4];
 };
 
 struct FSkeletalMeshData
 {
+    FString Name;
     TArray<FBoneInfo> Bones;
     TArray<FSkinnedVertex> Vertices;
     TArray<uint32> Indices;
+    TArray<FSkinWeight> Weights;
 };

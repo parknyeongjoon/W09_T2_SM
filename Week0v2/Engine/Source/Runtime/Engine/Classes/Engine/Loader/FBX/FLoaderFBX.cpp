@@ -4,7 +4,8 @@
 
 bool FLoaderFBX::LoadSkeletalMesh(const FString& FilePath, FSkeletalMeshData& OutData)
 {
-    std::filesystem::path FbxPath = FilePath; 
+    OutData.Name = FilePath;
+    std::filesystem::path FbxPath = FilePath;
     std::string           FbxUtf8    = FbxPath.string();
 
     // 1) Manager/IOSettings/Importer 세팅
@@ -25,7 +26,7 @@ bool FLoaderFBX::LoadSkeletalMesh(const FString& FilePath, FSkeletalMeshData& Ou
     Importer->Import(Scene);
     Importer->Destroy();
 
-    // 3) 스켈레톤 파싱
+    // 3) Skeleton 파싱
     TArray<FBoneInfo> Bones;
     ParseSkeletonRecursive(Scene->GetRootNode(), Bones, -1);
     ComputeGlobalBindPoses(Bones);
@@ -36,18 +37,28 @@ bool FLoaderFBX::LoadSkeletalMesh(const FString& FilePath, FSkeletalMeshData& Ou
     CollectMeshes(Scene->GetRootNode(), Meshes);
 
     TArray<FSkinnedVertex>    Vertices;
+    TArray<FSkinWeight>        Weights;
     TArray<uint32>             Indices;
     TMap<int32, TArray<int32>> CP2Verts;  // control-point → 버텍스 인덱스 맵
     for (FbxMesh* Mesh : Meshes)
         ExtractMeshData(Mesh, Vertices, Indices, CP2Verts);
 
+    FSkinWeight DefaultW;
+    for (int k = 0; k < 4; ++k)
+    {
+        DefaultW.BoneIndices[k] = -1;
+        DefaultW.BoneWeights[k] = 0.f;
+    }
+    Weights.Init(DefaultW, Vertices.Num());
+
     // 5) Skin Weight 적용
     for (FbxMesh* Mesh : Meshes)
-        ParseSkinWeights(Mesh, Vertices, Bones, CP2Verts);
+        ParseSkinWeights(Mesh, Weights, Bones, CP2Verts);
 
     // 6) OutData에 메시 데이터 바인딩
     OutData.Vertices = std::move(Vertices);
     OutData.Indices  = std::move(Indices);
+    OutData.Weights = std::move(Weights);
 
     // 7) 리소스 정리 및 반환
     Manager->Destroy();
@@ -185,7 +196,7 @@ void FLoaderFBX::ExtractMeshData(FbxMesh* Mesh,
 
 void FLoaderFBX::ParseSkinWeights(
     FbxMesh*                            Mesh,
-    TArray<FSkinnedVertex>&            Vertices,
+    TArray<FSkinWeight>&                Weights,
     const TArray<FBoneInfo>&            Bones,
     const TMap<int32, TArray<int32>>&   CP2Verts)
 {
@@ -213,10 +224,10 @@ void FLoaderFBX::ParseSkinWeights(
         // 각 컨트롤 포인트 영향
         int Count = Cluster->GetControlPointIndicesCount();
         int* CtrlPoints = Cluster->GetControlPointIndices();
-        double* Weights     = Cluster->GetControlPointWeights();
+        double* CtrlWeights     = Cluster->GetControlPointWeights();
         for (int i = 0; i < Count; ++i) {
             int CPIdx = CtrlPoints[i];
-            float  W    = (float)Weights[i];
+            float  W    = (float)CtrlWeights[i];
             
             // 해당 제어점이 참조한 버텍스들만 순회
             const TArray<int32>* VtxList = CP2Verts.Find(CPIdx);
@@ -224,13 +235,13 @@ void FLoaderFBX::ParseSkinWeights(
             
             for (int VtxIdx : *VtxList)
             {
-                FSkinnedVertex& V = Vertices[VtxIdx];
+                FSkinWeight& SW = Weights[VtxIdx];
                 for (int k = 0; k < 4; ++k)
                 {
-                    if (V.BoneWeights[k] == 0.f)
+                    if (SW.BoneWeights[k] == 0.f)
                     {
-                        V.BoneIndices[k] = BoneIndex;
-                        V.BoneWeights[k] = W;
+                        SW.BoneIndices[k] = BoneIndex;
+                        SW.BoneWeights[k] = W;
                         break;
                     }
                 }
@@ -239,12 +250,14 @@ void FLoaderFBX::ParseSkinWeights(
     }
 
     // 웨이트 정규화
-    for (FSkinnedVertex& V : Vertices) {
-        float Sum = V.BoneWeights[0] + V.BoneWeights[1] + V.BoneWeights[2] + V.BoneWeights[3];
-        if (Sum > 0) {
+    for (FSkinWeight& SW : Weights) {
+        float WeightSum = SW.BoneWeights[0]
+                    + SW.BoneWeights[1]
+                    + SW.BoneWeights[2]
+                    + SW.BoneWeights[3];
+        if (WeightSum > 0.f)
             for (int k = 0; k < 4; ++k)
-                V.BoneWeights[k] /= Sum;
-        }
+                SW.BoneWeights[k] /= WeightSum;
     }
 }
 
