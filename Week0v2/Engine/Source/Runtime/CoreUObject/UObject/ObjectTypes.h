@@ -17,6 +17,7 @@ enum OBJECTS
     OBJ_CAR,
     OBJ_SKYSPHERE,
     OBJ_YEOUL,
+    OBJ_SKELETAL,
     OBJ_END
 };
 enum ARROW_DIR
