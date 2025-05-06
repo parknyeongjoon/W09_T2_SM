@@ -68,14 +68,22 @@ void UWorld::CreateBaseObject()
     USkeletalMeshComponent* SkeletalMeshComp = SkeletalActor->AddComponent<USkeletalMeshComponent>(EComponentOrigin::Editor);
     USkeletalMesh* SkeletalMesh = new USkeletalMesh();
     SkeletalMesh->SetData("NyeongFBX.fbx");
+
     
     SkeletalMeshComp->SetSkeletalMesh(SkeletalMesh);
     SkeletalMeshComp->UpdateBoneHierarchy();
     
+    AActor* SkeletalActor2 = SpawnActor<AActor>();
+    USkeletalMeshComponent* SkeletalMeshComp2 = SkeletalActor2->AddComponent<USkeletalMeshComponent>(EComponentOrigin::Editor);
+    USkeletalMesh* SkeletalMesh2 = new USkeletalMesh();
+    SkeletalMesh2->SetData("NyeongFBX.fbx");
+    SkeletalMeshComp2->SetSkeletalMesh(SkeletalMesh2);
+    SkeletalMeshComp2->UpdateBoneHierarchy();
+    
     SkeletalMesh->ApplyRotationToBone(SkeletalMesh->FindBoneIndexByName("Spine"), -60.f, FVector(1, 0, 0));
     SkeletalMeshComp->UpdateBoneHierarchy();
-    // SkeletalMesh->ApplyRotationToBone(SkeletalMesh->FindBoneIndexByName("f_index.01.L"), -60.f, FVector(1, 0, 0));
-    // SkeletalMeshComp->UpdateBornHierarchy();
+    SkeletalMesh->ApplyRotationToBone(SkeletalMesh->FindBoneIndexByName("f_index.01.L"), -60.f, FVector(1, 0, 0));
+    SkeletalMeshComp->UpdateBoneHierarchy();
     
     // 본 시각화
     for (const auto& Bone : SkeletalMesh->GetRenderData().Bones)

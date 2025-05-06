@@ -373,7 +373,7 @@ void TestFBXLoader::ProcessSkinning(FbxSkin* Skin, FSkeletalMeshRenderData* Mesh
         }
         
         // Get binding pose transformation
-      //  NewBone.InverseBindPoseMatrix = FMatrix::Inverse(NewBone.GlobalTransform);
+        //  NewBone.InverseBindPoseMatrix = FMatrix::Inverse(NewBone.GlobalTransform);
         FbxAMatrix MeshTransform;
         Cluster->GetTransformMatrix(MeshTransform); // 메시의 변환 행렬 (기준점)
 
