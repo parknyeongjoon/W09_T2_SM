@@ -58,6 +58,7 @@ void TestFBXLoader::ExtractFBXMeshData(const FbxScene* Scene, FSkeletalMeshRende
 void TestFBXLoader::ExtractMeshFromNode(FbxNode* Node, FSkeletalMeshRenderData* MeshData, FRefSkeletal* RefSkeletal)
 {
     FbxMesh* Mesh = Node->GetMesh();
+    int BaseIndexOffset = MeshData->Indices.Num();
     // Mesh가 있다면 데이터 저장
     if (Mesh)
     {
@@ -68,10 +69,17 @@ void TestFBXLoader::ExtractMeshFromNode(FbxNode* Node, FSkeletalMeshRenderData* 
         ExtractIndices(Mesh, MeshData);
         
         // 머테리얼 데이터 추출
-        ExtractMaterials(Node, Mesh, MeshData, RefSkeletal);
+        ExtractMaterials(Node, Mesh, MeshData, RefSkeletal, BaseIndexOffset);
         
         // 바운딩 박스 업데이트
         UpdateBoundingBox(*MeshData);
+
+        for (int i=0;i<MeshData->Vertices.Num();i++)
+        {
+            FSkeletalVertex Vertex;
+            Vertex = MeshData->Vertices[i];
+            RefSkeletal->RawVertices.Add(Vertex);
+        }
     }
 
     // 자식 노드들에 대해 재귀적으로 수행
@@ -119,158 +127,181 @@ void TestFBXLoader::ExtractVertices(FbxMesh* Mesh, FSkeletalMeshRenderData* Mesh
 
     // 스키닝 정보 추출 (bone weight 추출)
     ExtractSkinningData(Mesh, MeshData, RefSkeletal, BaseVertexIndex);
-
-    for (int i=0;i<VertexCount;i++)
-    {
-        FSkeletalVertex Vertex;
-        Vertex = MeshData->Vertices[i];
-        RefSkeletal->RawVertices.Add(Vertex);
-    }
 }
 
-void TestFBXLoader::ExtractNormals(FbxMesh* Mesh, FSkeletalMeshRenderData* RenderData, int BaseVertexIndex)
+void TestFBXLoader::ExtractNormals(
+    FbxMesh* Mesh,
+    FSkeletalMeshRenderData* RenderData,
+    int BaseVertexIndex)
 {
-    FbxGeometryElementNormal* NormalElement = Mesh->GetElementNormal();
-    if (!NormalElement)
+    auto* NormalElem = Mesh->GetElementNormal();
+    if (!NormalElem) return;
+
+    // 매핑·레퍼런스 모드
+    auto mapMode = NormalElem->GetMappingMode();
+    auto refMode = NormalElem->GetReferenceMode();
+
+    // 순회 인덱스
+    int polyVertCounter   = 0;
+    int vertexBufferIndex = BaseVertexIndex;
+
+    // 인덱스 계산 람다
+    std::function<int(int,int)> getIdx;
+    if (mapMode == FbxGeometryElement::eByControlPoint) {
+        if (refMode == FbxGeometryElement::eDirect)
+            getIdx = [&](int cp, int pv){ return cp; };
+        else
+            getIdx = [&](int cp, int pv){ return NormalElem->GetIndexArray().GetAt(cp); };
+    }
+    else if (mapMode == FbxGeometryElement::eByPolygonVertex) {
+        if (refMode == FbxGeometryElement::eDirect)
+            getIdx = [&](int cp, int pv){ return pv; };
+        else
+            getIdx = [&](int cp, int pv){ return NormalElem->GetIndexArray().GetAt(pv); };
+    }
+    else {
+        // eByPolygon, eAllSame 등 추가 지원 필요 시 여기
         return;
-        
-    FbxGeometryElement::EMappingMode MappingMode = NormalElement->GetMappingMode();
-    FbxGeometryElement::EReferenceMode ReferenceMode = NormalElement->GetReferenceMode();
-    
-    int PolygonCount = Mesh->GetPolygonCount();
-    
-    // 폴리곤 별로 순회하며 법선 데이터 추출
-    for (int PolyIndex = 0; PolyIndex < PolygonCount; PolyIndex++)
+    }
+
+
+
+    // 폴리곤-버텍스 순회
+    int polyCount = Mesh->GetPolygonCount();
+
+    int totalPolyVerts = 0;
+    for (int p = 0; p < polyCount; ++p)
+        totalPolyVerts += Mesh->GetPolygonSize(p);
+
+    // 이제 여기에 맞춰서
+    RenderData->Vertices.SetNum(BaseVertexIndex + totalPolyVerts);
+
+    for (int p = 0; p < polyCount; ++p)
     {
-        int PolySize = Mesh->GetPolygonSize(PolyIndex);
-        
-        for (int VertexIndex = 0; VertexIndex < PolySize; VertexIndex++)
+        int polySize = Mesh->GetPolygonSize(p);
+        for (int v = 0; v < polySize; ++v)
         {
-            int ControlPointIndex = Mesh->GetPolygonVertex(PolyIndex, VertexIndex);
-            
-            // 매핑 모드에 따른 법선 인덱스 계산
-            int NormalIndex = 0;
-            
-            if (MappingMode == FbxGeometryElement::eByControlPoint)
-            {
-                if (ReferenceMode == FbxGeometryElement::eDirect)
-                    NormalIndex = ControlPointIndex;
-                else if (ReferenceMode == FbxGeometryElement::eIndexToDirect)
-                    NormalIndex = NormalElement->GetIndexArray().GetAt(ControlPointIndex);
-            }
-            else if (MappingMode == FbxGeometryElement::eByPolygonVertex)
-            {
-                int VertexId = PolyIndex * 3 + VertexIndex;
-                
-                if (ReferenceMode == FbxGeometryElement::eDirect)
-                    NormalIndex = VertexId;
-                else if (ReferenceMode == FbxGeometryElement::eIndexToDirect)
-                    NormalIndex = NormalElement->GetIndexArray().GetAt(VertexId);
-            }
-            
-            // 법선 데이터 가져오기
-            FbxVector4 Normal = NormalElement->GetDirectArray().GetAt(NormalIndex);
-            
-            // 해당 정점의 법선 설정
-            RenderData->Vertices[BaseVertexIndex + ControlPointIndex].Normal.X = static_cast<float>(Normal[0]);
-            RenderData->Vertices[BaseVertexIndex + ControlPointIndex].Normal.Y = static_cast<float>(Normal[1]);
-            RenderData->Vertices[BaseVertexIndex + ControlPointIndex].Normal.Z = static_cast<float>(Normal[2]);
+            int ctrlIdx = Mesh->GetPolygonVertex(p, v);
+            int idx     = getIdx(ctrlIdx, polyVertCounter);
+
+            auto Nor = NormalElem->GetDirectArray().GetAt(idx);
+            auto& V   = RenderData->Vertices[vertexBufferIndex];
+            V.Normal.X = (float)Nor[0];
+            V.Normal.Y = (float)Nor[1];
+            V.Normal.Z = (float)Nor[2];
+
+            ++polyVertCounter;
+            ++vertexBufferIndex;
         }
     }
 }
 
-void TestFBXLoader::ExtractUVs(FbxMesh* Mesh, FSkeletalMeshRenderData* MeshData, int BaseVertexIndex)
+void TestFBXLoader::ExtractUVs(
+    FbxMesh* Mesh,
+    FSkeletalMeshRenderData* MeshData,
+    int BaseVertexIndex)
 {
-    FbxGeometryElementUV* UVElement = Mesh->GetElementUV(0); // 첫 번째 UV 채널 사용
-    if (!UVElement)
+    auto* UVElem = Mesh->GetElementUV(0);
+    if (!UVElem) return;
+
+    auto mapMode = UVElem->GetMappingMode();
+    auto refMode = UVElem->GetReferenceMode();
+
+    int polyVertCounter   = 0;
+    int vertexBufferIndex = BaseVertexIndex;
+
+    std::function<int(int,int)> getIdx;
+    if (mapMode == FbxGeometryElement::eByControlPoint) {
+        if (refMode == FbxGeometryElement::eDirect)
+            getIdx = [&](int cp, int pv){ return cp; };
+        else
+            getIdx = [&](int cp, int pv){ return UVElem->GetIndexArray().GetAt(cp); };
+    }
+    else if (mapMode == FbxGeometryElement::eByPolygonVertex) {
+        if (refMode == FbxGeometryElement::eDirect)
+            getIdx = [&](int cp, int pv){ return pv; };
+        else
+            getIdx = [&](int cp, int pv){ return UVElem->GetIndexArray().GetAt(pv); };
+    }
+    else {
         return;
-        
-    FbxGeometryElement::EMappingMode MappingMode = UVElement->GetMappingMode();
-    FbxGeometryElement::EReferenceMode ReferenceMode = UVElement->GetReferenceMode();
-    
-    int PolygonCount = Mesh->GetPolygonCount();
-    
-    for (int PolyIndex = 0; PolyIndex < PolygonCount; PolyIndex++)
+    }
+
+    int polyCount = Mesh->GetPolygonCount();
+    for (int p = 0; p < polyCount; ++p)
     {
-        int PolySize = Mesh->GetPolygonSize(PolyIndex);
-        
-        for (int VertexIndex = 0; VertexIndex < PolySize; VertexIndex++)
+        int polySize = Mesh->GetPolygonSize(p);
+        for (int v = 0; v < polySize; ++v)
         {
-            int ControlPointIndex = Mesh->GetPolygonVertex(PolyIndex, VertexIndex);
-            int UVIndex = Mesh->GetTextureUVIndex(PolyIndex, VertexIndex);
-            
-            // 매핑 모드에 따른 UV 인덱스 계산
-            if (MappingMode == FbxGeometryElement::eByControlPoint)
-            {
-                if (ReferenceMode == FbxGeometryElement::eDirect)
-                    UVIndex = ControlPointIndex;
-                else if (ReferenceMode == FbxGeometryElement::eIndexToDirect)
-                    UVIndex = UVElement->GetIndexArray().GetAt(ControlPointIndex);
-            }
-            else if (MappingMode == FbxGeometryElement::eByPolygonVertex)
-            {
-                if (ReferenceMode == FbxGeometryElement::eDirect || ReferenceMode == FbxGeometryElement::eIndexToDirect)
-                {
-                    // UVIndex는 이미 Mesh->GetTextureUVIndex에서 계산됨
-                }
-            }
-            
-            // UV 데이터 가져오기
-            FbxVector2 UV = UVElement->GetDirectArray().GetAt(UVIndex);
-            
-            // 해당 정점의 UV 설정
-            MeshData->Vertices[BaseVertexIndex + ControlPointIndex].TexCoord.X = static_cast<float>(UV[0]);
-            MeshData->Vertices[BaseVertexIndex + ControlPointIndex].TexCoord.Y = 1.0f - static_cast<float>(UV[1]); // DirectX UV 좌표계로 변환
+            int ctrlIdx = Mesh->GetPolygonVertex(p, v);
+            int idx     = getIdx(ctrlIdx, polyVertCounter);
+
+            auto UV = UVElem->GetDirectArray().GetAt(idx);
+            auto& V = MeshData->Vertices[vertexBufferIndex];
+            V.TexCoord.X = (float)UV[0];
+            V.TexCoord.Y = 1.0f - (float)UV[1];  // DirectX 좌표계 보정
+
+            ++polyVertCounter;
+            ++vertexBufferIndex;
         }
     }
 }
 
-void TestFBXLoader::ExtractTangents(FbxMesh* Mesh, FSkeletalMeshRenderData* MeshData, int BaseVertexIndex)
+void TestFBXLoader::ExtractTangents(
+    FbxMesh* Mesh,
+    FSkeletalMeshRenderData* MeshData,
+    int BaseVertexIndex)
 {
-    FbxGeometryElementTangent* TangentElement = Mesh->GetElementTangent();
-    if (!TangentElement)
-        return;
-        
-    FbxGeometryElement::EMappingMode MappingMode = TangentElement->GetMappingMode();
-    FbxGeometryElement::EReferenceMode ReferenceMode = TangentElement->GetReferenceMode();
-    
-    int PolygonCount = Mesh->GetPolygonCount();
-    
-    for (int PolyIndex = 0; PolyIndex < PolygonCount; PolyIndex++)
+    // Tangent 없으면 생성
+    auto* TanElem = Mesh->GetElementTangent(0);
+    if (!TanElem || TanElem->GetDirectArray().GetCount() == 0)
     {
-        int PolySize = Mesh->GetPolygonSize(PolyIndex);
-        
-        for (int VertexIndex = 0; VertexIndex < PolySize; VertexIndex++)
+        printf("FBX Tangent Empty!");
+        Mesh->GenerateTangentsData(0, /*overwrite=*/ true);
+        TanElem = Mesh->GetElementTangent(0);
+        if (!TanElem) return;
+    }
+
+    auto mapMode = TanElem->GetMappingMode();
+    auto refMode = TanElem->GetReferenceMode();
+
+    int polyVertCounter   = 0;
+    int vertexBufferIndex = BaseVertexIndex;
+
+    std::function<int(int,int)> getIdx;
+    if (mapMode == FbxGeometryElement::eByControlPoint) {
+        if (refMode == FbxGeometryElement::eDirect)
+            getIdx = [&](int cp, int pv){ return cp; };
+        else
+            getIdx = [&](int cp, int pv){ return TanElem->GetIndexArray().GetAt(cp); };
+    }
+    else if (mapMode == FbxGeometryElement::eByPolygonVertex) {
+        if (refMode == FbxGeometryElement::eDirect)
+            getIdx = [&](int cp, int pv){ return pv; };
+        else
+            getIdx = [&](int cp, int pv){ return TanElem->GetIndexArray().GetAt(pv); };
+    }
+    else {
+        return;
+    }
+
+    int polyCount = Mesh->GetPolygonCount();
+    for (int p = 0; p < polyCount; ++p)
+    {
+        int polySize = Mesh->GetPolygonSize(p);
+        for (int v = 0; v < polySize; ++v)
         {
-            int ControlPointIndex = Mesh->GetPolygonVertex(PolyIndex, VertexIndex);
-            
-            // 매핑 모드에 따른 탄젠트 인덱스 계산
-            int TangentIndex = 0;
-            
-            if (MappingMode == FbxGeometryElement::eByControlPoint)
-            {
-                if (ReferenceMode == FbxGeometryElement::eDirect)
-                    TangentIndex = ControlPointIndex;
-                else if (ReferenceMode == FbxGeometryElement::eIndexToDirect)
-                    TangentIndex = TangentElement->GetIndexArray().GetAt(ControlPointIndex);
-            }
-            else if (MappingMode == FbxGeometryElement::eByPolygonVertex)
-            {
-                int VertexId = PolyIndex * 3 + VertexIndex;
-                
-                if (ReferenceMode == FbxGeometryElement::eDirect)
-                    TangentIndex = VertexId;
-                else if (ReferenceMode == FbxGeometryElement::eIndexToDirect)
-                    TangentIndex = TangentElement->GetIndexArray().GetAt(VertexId);
-            }
-            
-            // 탄젠트 데이터 가져오기
-            FbxVector4 Tangent = TangentElement->GetDirectArray().GetAt(TangentIndex);
-            
-            // 해당 정점의 탄젠트 설정
-            MeshData->Vertices[BaseVertexIndex + ControlPointIndex].Tangent.X = static_cast<float>(Tangent[0]);
-            MeshData->Vertices[BaseVertexIndex + ControlPointIndex].Tangent.Y = static_cast<float>(Tangent[1]);
-            MeshData->Vertices[BaseVertexIndex + ControlPointIndex].Tangent.Z = static_cast<float>(Tangent[2]);
+            int ctrlIdx = Mesh->GetPolygonVertex(p, v);
+            int idx     = getIdx(ctrlIdx, polyVertCounter);
+
+            auto Tan = TanElem->GetDirectArray().GetAt(idx);
+            auto& V   = MeshData->Vertices[vertexBufferIndex];
+            V.Tangent.X = (float)Tan[0];
+            V.Tangent.Y = (float)Tan[1];
+            V.Tangent.Z = (float)Tan[2];
+
+            ++polyVertCounter;
+            ++vertexBufferIndex;
         }
     }
 }
@@ -511,61 +542,95 @@ void TestFBXLoader::ExtractIndices(FbxMesh* Mesh, FSkeletalMeshRenderData* MeshD
     }
 }
 
-void TestFBXLoader::ExtractMaterials(FbxNode* Node, FbxMesh* Mesh, FSkeletalMeshRenderData* MeshData, FRefSkeletal* RefSkeletal)
+void TestFBXLoader::ExtractMaterials(
+    FbxNode* Node,
+    FbxMesh* Mesh,
+    FSkeletalMeshRenderData* MeshData,
+    FRefSkeletal* RefSkeletal,
+    int BaseIndexOffset)
 {
-    int MaterialCount = Node->GetMaterialCount();
-    int BaseIndexOffset = MeshData->Indices.Num();
-    int TotalTriangleCount = 0;
-    for (int PolyIndex = 0; PolyIndex < Mesh->GetPolygonCount(); PolyIndex++) {
-        int PolySize = Mesh->GetPolygonSize(PolyIndex);
-        TotalTriangleCount += (PolySize - 2); // 폴리곤을 삼각형으로 분할한 개수
-    }
-    BaseIndexOffset -= TotalTriangleCount * 3; // 총 삼각형 개수 * 3
-    
-    // 재질 정보 추출
-    for (int i = 0; i < MaterialCount; i++)
+    auto* MatElem = Mesh->GetElementMaterial();
+    int  matCount = Node->GetMaterialCount();
+
+    // 매핑·레퍼런스 모드
+    auto mapMode = MatElem
+                 ? MatElem->GetMappingMode()
+                 : FbxGeometryElement::eAllSame;
+    auto refMode = MatElem
+                 ? MatElem->GetReferenceMode()
+                 : FbxGeometryElement::eDirect;
+
+    int polyVertCounter = 0;
+    int polyCount       = Mesh->GetPolygonCount();
+
+    // 총 삼각형 수 미리 계산 (eAllSame, eByPolygon 모두 공통)
+    int totalTris = 0;
+    for (int p = 0; p < polyCount; ++p)
+        totalTris += Mesh->GetPolygonSize(p) - 2;
+
+    int currentOffset = BaseIndexOffset;
+
+    for (int matIdx = 0; matIdx < matCount; ++matIdx)
     {
-        FbxSurfaceMaterial* FbxMaterial = Node->GetMaterial(i);
-        if (!FbxMaterial)
-            continue;
-            
-        // 재질 이름 가져오기
-        FString MaterialName = FbxMaterial->GetName();
-        
-        // 엔진 재질 생성 또는 검색
-        UMaterial* Material = FManagerOBJ::GetMaterial(MaterialName);
-        
-        // 재질 추가
-        int MaterialIndex = RefSkeletal->Materials.Add(Material);
-        
-        // 폴리곤을 순회하며 현재 재질에 해당하는 폴리곤 수 계산
-        int PolygonCount = Mesh->GetPolygonCount();
-        int TriangleCount = 0;
-        
-        for (int PolyIndex = 0; PolyIndex < PolygonCount; PolyIndex++)
+        // 이 재질에 속하는 삼각형 개수 세기
+        int triCount = 0;
+        polyVertCounter = 0;
+
+        for (int p = 0; p < polyCount; ++p)
         {
-            int MaterialIndexForPolygon = Mesh->GetElementMaterial()->GetIndexArray().GetAt(PolyIndex);
-            
-            if (MaterialIndexForPolygon == i)
+            int polySize = Mesh->GetPolygonSize(p);
+
+            // 폴리곤 하나당 매핑된 재질 인덱스를 구하는 방법
+            int thisMat = 0;
+            switch (mapMode)
             {
-                int PolySize = Mesh->GetPolygonSize(PolyIndex);
-                TriangleCount += (PolySize - 2); // 삼각형 개수 계산
+            case FbxGeometryElement::eAllSame:
+                thisMat = 0; 
+                break;
+            case FbxGeometryElement::eByPolygon:
+                thisMat = MatElem->GetIndexArray().GetAt(p);
+                break;
+            case FbxGeometryElement::eByPolygonVertex:
+                {
+                    // 1) 항상 IndexArray에서 머티리얼 레이어 인덱스 꺼내기
+                    int layerMatIdx = MatElem->GetIndexArray().GetAt(polyVertCounter);
+
+                    // 2) 그 인덱스로 노드의 실제 머티리얼 얻기
+                    //    (thisMat은 단순히 머티리얼 번호로 사용)
+                    thisMat = layerMatIdx;
+                    break;
+                }
+            default:
+                thisMat = 0;
             }
+
+            if (thisMat == matIdx)
+                triCount += (polySize - 2);
+
+            polyVertCounter += (mapMode == FbxGeometryElement::eByPolygonVertex
+                                ? polySize
+                                : 1);
         }
 
-        // 재질 서브셋 정보 구성
-        FMaterialSubset Subset;
-        Subset.MaterialIndex = MaterialIndex;
-        Subset.IndexStart = BaseIndexOffset; // 시작 인덱스
-        Subset.MaterialName = MaterialName;
-        Subset.IndexCount = TriangleCount * 3; // 삼각형 당 인덱스 3개
-        RefSkeletal->MaterialSubsets.Add(Subset);
+        // Subset 만들기
+        // Material 생성 & 등록
+        FbxSurfaceMaterial* srcMtl = Node->GetMaterial(matIdx);
+        FString            mtlName = srcMtl ? FString(srcMtl->GetName()) : TEXT("Mat") + FString::FromInt(matIdx);
+        auto                newMtl = FManagerOBJ::CreateMaterial(ConvertFbxToObjMaterialInfo(srcMtl));
+        int                 finalIdx = RefSkeletal->Materials.Add(newMtl);
 
-        BaseIndexOffset += TriangleCount * 3;
+        FMaterialSubset subset;
+        subset.MaterialName  = mtlName;
+        subset.MaterialIndex = finalIdx;
+        subset.IndexStart    = currentOffset;
+        subset.IndexCount    = triCount * 3;
+        RefSkeletal->MaterialSubsets.Add(subset);
+
+        currentOffset += triCount * 3;
     }
     
     // 메시에 재질이 없는 경우 기본 재질 생성
-    if (MaterialCount == 0)
+    if (matCount == 0)
     {
         UMaterial* DefaultMaterial = FManagerOBJ::GetDefaultMaterial();
         int MaterialIndex = RefSkeletal->Materials.Add(DefaultMaterial);
@@ -642,4 +707,115 @@ FRefSkeletal* TestFBXLoader::GetRefSkeletal(FString FilePath)
     }
     
     return nullptr;
+}
+
+// FBX 머티리얼 → FObjMaterialInfo 변환 헬퍼
+FObjMaterialInfo TestFBXLoader::ConvertFbxToObjMaterialInfo(
+    FbxSurfaceMaterial* FbxMat,
+    const FString& BasePath)
+{
+    FObjMaterialInfo OutInfo;
+
+    // Material Name
+    OutInfo.MTLName = FString(FbxMat->GetName());
+    
+    // Lambert 전용 프로퍼티
+    if (auto* Lam = FbxCast<FbxSurfaceLambert>(FbxMat))
+    {
+        // Ambient
+        {
+            auto c = Lam->Ambient.Get();
+            float f = (float)Lam->AmbientFactor.Get();
+            OutInfo.Ambient = FVector(c[0]*f, c[1]*f, c[2]*f);
+        }
+        // Diffuse
+        {
+            auto c = Lam->Diffuse.Get();
+            float f = (float)Lam->DiffuseFactor.Get();
+            OutInfo.Diffuse = FVector(c[0]*f, c[1]*f, c[2]*f);
+        }
+        // Emissive
+        {
+            auto c = Lam->Emissive.Get();
+            float f = (float)Lam->EmissiveFactor.Get();
+            OutInfo.Emissive = FVector(c[0]*f, c[1]*f, c[2]*f);
+        }
+        // BumpScale
+        OutInfo.NormalScale = (float)Lam->BumpFactor.Get();
+    }
+
+    // Phong 전용 프로퍼티
+    if (auto* Pho = FbxCast<FbxSurfacePhong>(FbxMat))
+    {
+        // Specular
+        {
+            auto c = Pho->Specular.Get();
+            OutInfo.Specular = FVector((float)c[0], (float)c[1], (float)c[2]);
+        }
+        // Shininess
+        OutInfo.SpecularScalar = (float)Pho->Shininess.Get();
+    }
+
+    // 공통 프로퍼티
+    {
+        // TransparencyFactor
+        if (auto prop = FbxMat->FindProperty(FbxSurfaceMaterial::sTransparencyFactor); prop.IsValid())
+        {
+            double tf = prop.Get<FbxDouble>();
+            OutInfo.TransparencyScalar = (float)tf;
+            OutInfo.bTransparent = OutInfo.TransparencyScalar < 1.f - KINDA_SMALL_NUMBER;
+        }
+
+        // Index of Refraction
+        constexpr char const* sIndexOfRefraction = "IndexOfRefraction";
+        if (auto prop = FbxMat->FindProperty(sIndexOfRefraction); prop.IsValid())
+        {
+            OutInfo.DensityScalar = (float)prop.Get<FbxDouble>();
+        }
+
+        // Illumination Model은 FBX에 따로 없으므로 기본 0
+        OutInfo.IlluminanceModel = 0;
+    }
+
+    // 텍스처 채널 (Diffuse, Ambient, Specular, Bump/Normal, Alpha)
+    auto ReadFirstTexture = [&](const char* PropName, FString& OutName, FWString& OutPath)
+    {
+        auto prop = FbxMat->FindProperty(PropName);
+        if (!prop.IsValid()) return;
+        int nbTex = prop.GetSrcObjectCount<FbxFileTexture>();
+        if (nbTex <= 0) return;
+        if (auto* Tex = prop.GetSrcObject<FbxFileTexture>(0))
+        {
+            FString fname = FString(Tex->GetFileName());
+            OutName = fname;
+            OutPath = (BasePath + fname).ToWideString();
+            OutInfo.bHasTexture = true;
+        }
+    };
+
+    // map_Kd
+    ReadFirstTexture(FbxSurfaceMaterial::sDiffuse,
+                     OutInfo.DiffuseTextureName,
+                     OutInfo.DiffuseTexturePath);
+    // map_Ka
+    ReadFirstTexture(FbxSurfaceMaterial::sAmbient,
+                     OutInfo.AmbientTextureName,
+                     OutInfo.AmbientTexturePath);
+    // map_Ks
+    ReadFirstTexture(FbxSurfaceMaterial::sSpecular,
+                     OutInfo.SpecularTextureName,
+                     OutInfo.SpecularTexturePath);
+    // map_Bump 또는 map_Ns
+    ReadFirstTexture(FbxSurfaceMaterial::sBump,
+                     OutInfo.BumpTextureName,
+                     OutInfo.BumpTexturePath);
+    ReadFirstTexture(FbxSurfaceMaterial::sNormalMap,
+                     OutInfo.NormalTextureName,
+                     OutInfo.NormalTexturePath);
+    // map_d (Alpha)
+    ReadFirstTexture(FbxSurfaceMaterial::sTransparentColor,
+                     OutInfo.AlphaTextureName,
+                     OutInfo.AlphaTexturePath);
+
+    return OutInfo;
 }

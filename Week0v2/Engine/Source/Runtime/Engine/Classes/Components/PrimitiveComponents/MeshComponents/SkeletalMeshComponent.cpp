@@ -134,7 +134,8 @@ void USkeletalMeshComponent::UpdateBoneHierarchy()
 {
     for (int i=0;i<SkeletalMesh->GetRenderData().Vertices.Num();i++)
     {
-         SkeletalMesh->GetRenderData().Vertices[i].Position = SkeletalMesh->GetRefSkeletal()->RawVertices[i].Position;
+        SkeletalMesh->GetRenderData().Vertices[i].Position = SkeletalMesh->GetRefSkeletal()->RawVertices[i].Position;
+        printf("%d\n", i);
     }
     SkeletalMesh->UpdateBoneHierarchy();
     SkinningVertex();

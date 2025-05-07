@@ -60,14 +60,15 @@ void UWorld::CreateBaseObject()
     
     PlayerCameraManager = SpawnActor<APlayerCameraManager>();
 
+    FString test = "Zombie.fbx";
     TestFBXLoader TestFBXLoader;
     TestFBXLoader.InitFBXManager();
-    TestFBXLoader.InitFBX("NyeongFBX.fbx");
+    TestFBXLoader.InitFBX(test);
     
     AActor* SkeletalActor = SpawnActor<AActor>();
     USkeletalMeshComponent* SkeletalMeshComp = SkeletalActor->AddComponent<USkeletalMeshComponent>(EComponentOrigin::Editor);
     USkeletalMesh* SkeletalMesh = new USkeletalMesh();
-    SkeletalMesh->SetData("NyeongFBX.fbx");
+    SkeletalMesh->SetData(test);
 
     
     SkeletalMeshComp->SetSkeletalMesh(SkeletalMesh);
@@ -76,7 +77,7 @@ void UWorld::CreateBaseObject()
     AActor* SkeletalActor2 = SpawnActor<AActor>();
     USkeletalMeshComponent* SkeletalMeshComp2 = SkeletalActor2->AddComponent<USkeletalMeshComponent>(EComponentOrigin::Editor);
     USkeletalMesh* SkeletalMesh2 = new USkeletalMesh();
-    SkeletalMesh2->SetData("NyeongFBX.fbx");
+    SkeletalMesh2->SetData(test);
     SkeletalMeshComp2->SetSkeletalMesh(SkeletalMesh2);
     SkeletalMeshComp2->UpdateBoneHierarchy();
     
