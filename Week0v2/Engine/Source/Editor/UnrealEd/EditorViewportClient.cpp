@@ -234,6 +234,40 @@ void FEditorViewportClient::InputKey(HWND AppWnd, const FKeyEvent& InKeyEvent)
         else
         {
             CameraInputPressedKeys.Empty();
+
+            /* @todo 뷰포트와 플레이어 중 조작 모드 누가 관리할지 정하기
+            // 마우스 우클릭 상태가 아닌 경우 - 변환 모드 설정
+            UEditorPlayer* EdPlayer = CastChecked<UEditorEngine>(GEngine)->GetEditorPlayer();
+            switch (InKeyEvent.GetCharacter())
+            {
+            case 'W':
+            {
+                if (InKeyEvent.GetInputEvent() == IE_Pressed)
+                {
+                    EdPlayer->SetMode(CM_TRANSLATION);
+                }
+                break;
+            }
+            case 'E':
+            {
+                if (InKeyEvent.GetInputEvent() == IE_Pressed)
+                {
+                    EdPlayer->SetMode(CM_ROTATION);
+                }
+                break;
+            }
+            case 'R':
+            {
+                if (InKeyEvent.GetInputEvent() == IE_Pressed)
+                {
+                    EdPlayer->SetMode(CM_SCALE);
+                }
+                break;
+            }
+            default:
+                break;
+            }
+            */
         }
 
 
@@ -284,15 +318,26 @@ void FEditorViewportClient::InputKey(HWND AppWnd, const FKeyEvent& InKeyEvent)
             switch (InKeyEvent.GetKeyCode())
             {
             case VK_DELETE:
-            {
-                for (AActor* Actor : GetWorld()->GetSelectedActors())
                 {
-                    UE_LOG(LogLevel::Display, "Delete Component - %s", *Actor->GetName());
-                    Actor->Destroy();
+                    auto SelectedActors = GetWorld()->GetSelectedActors();
+                    if (!SelectedActors.IsEmpty())
+                    {
+                        // @todo 선택된 Component가 있는 경우 Component를 지울 것
+                        //if (SelectedActors.Num() == 1)
+                        //{
+                        //}
+                        //else
+                        //{
+                            for (AActor* Actor : SelectedActors)
+                            {
+                                UE_LOG(LogLevel::Display, "Delete Actor - %s", *Actor->GetName());
+                                Actor->Destroy();
+                            }
+                        //}
+                    }
+                    GetWorld()->ClearSelectedActors();
+                    break;
                 }
-                GetWorld()->ClearSelectedActors();
-                break;
-            }
             case VK_SPACE:
             {
                 EditorEngine->GetLevelEditor()->GetActiveViewportClientData().AddControlMode();
@@ -307,20 +352,6 @@ void FEditorViewportClient::InputKey(HWND AppWnd, const FKeyEvent& InKeyEvent)
                 break;
             }
         }
-
-        if (InKeyEvent.GetInputEvent() == IE_Released)
-        {
-            switch (InKeyEvent.GetKeyCode())
-            {
-            case VK_LCONTROL:
-                {
-                    PressedKeys.Remove(EKeys::LeftControl);
-                    break;
-                }
-            default:
-                break;
-            }
-        }
     }
 }
 
@@ -328,16 +359,20 @@ void FEditorViewportClient::MouseMove(const FPointerEvent& InMouseEvent)
 {
     const auto& [DeltaX, DeltaY] = InMouseEvent.GetCursorDelta();
 
-    // Yaw(좌우 회전) 및 Pitch(상하 회전) 값 변경
-    if (IsPerspective())
+    // 마우스 우클릭이 되었을때만 실행되는 함수
+    if (GetKeyState(VK_RBUTTON) & 0x8000)
     {
-        CameraRotateYaw(DeltaX * 0.1f);  // X 이동에 따라 좌우 회전
-        CameraRotatePitch(DeltaY * 0.1f);  // Y 이동에 따라 상하 회전
-    }
-    else
-    {
-        PivotMoveRight(DeltaX);
-        PivotMoveUp(DeltaY);
+        // Yaw(좌우 회전) 및 Pitch(상하 회전) 값 변경
+        if (IsPerspective())
+        {
+            CameraRotateYaw(DeltaX * 0.1f);  // X 이동에 따라 좌우 회전
+            CameraRotatePitch(DeltaY * 0.1f);  // Y 이동에 따라 상하 회전
+        }
+        else
+        {
+            PivotMoveRight(DeltaX);
+            PivotMoveUp(DeltaY);
+        }
     }
 }
 
@@ -354,8 +389,8 @@ void FEditorViewportClient::ResizeViewport(FRect Top, FRect Bottom, FRect Left, 
     
     float Width = Viewport->GetFSlateRect().Width;
     float Height = Viewport->GetFSlateRect().Height;
-    
     AspectRatio = Width / Height;
+
     UpdateProjectionMatrix();
     UpdateViewMatrix();
 }
@@ -373,8 +408,8 @@ void FEditorViewportClient::ResizeViewport(FRect InRect)
     
     float Width = Viewport->GetFSlateRect().Width;
     float Height = Viewport->GetFSlateRect().Height;
-    
     AspectRatio = Width / Height;
+
     UpdateProjectionMatrix();
     UpdateViewMatrix();
 }
@@ -393,6 +428,7 @@ bool FEditorViewportClient::IsSelected(FVector2D Point)
     }
     return false;
 }
+
 const D3D11_VIEWPORT& FEditorViewportClient::GetD3DViewport()
 {
     return Viewport->GetViewport();

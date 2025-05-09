@@ -16,6 +16,7 @@ public:
     void EndFrame(HWND hWnd);
     void Release();
     bool GetWantCaptureMouse(HWND hWnd);
+    bool GetWantCaptureKeyboard(HWND hWnd);
     struct ImGuiContext* GetImGuiContext(HWND hWnd);
 
 private:

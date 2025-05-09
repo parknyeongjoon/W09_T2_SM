@@ -95,7 +95,8 @@ public:
     void Tick(float DeltaTime);
     void Release();
     void UpdateEditorCameraMovement(float DeltaTime);
-    
+
+    // @todo MultiViewport 떄문에 AppWnd를 인자로 받는중이다. 제거할 방안
     void InputKey(HWND AppWnd, const FKeyEvent& InKeyEvent);
     void MouseMove(const FPointerEvent& InMouseEvent);
 

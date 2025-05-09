@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "RawInput.h"
 #include "Delegates/DelegateCombination.h"
 #include "HAL/PlatformType.h"
@@ -29,10 +29,7 @@ class FSlateAppMessageHandler
 public:
     FSlateAppMessageHandler();
 
-    void ProcessMessage(HWND hWnd, uint32 Msg, WPARAM wParam, LPARAM lParam);
-
-    void AddWindow(HWND AppWnd);
-    void RemoveWindow(HWND AppWnd);
+    void ProcessMessage(HWND AppWnd, uint32 Msg, WPARAM wParam, LPARAM lParam);
 
 public:
     /** Cursor와 관련된 변수를 업데이트 합니다. */
@@ -65,6 +62,7 @@ public:
     FOnKeyCharDelegate OnKeyCharDelegate;
     FOnKeyDownDelegate OnKeyDownDelegate;
     FOnKeyUpDelegate OnKeyUpDelegate;
+
     FOnMouseDownDelegate OnMouseDownDelegate;
     FOnMouseUpDelegate OnMouseUpDelegate;
     FOnMouseDoubleClickDelegate OnMouseDoubleClickDelegate;
@@ -99,7 +97,7 @@ private:
     bool ModifierKeyState[EModifierKey::Count];
     TSet<EKeys::Type> PressedMouseButtons;
 
-    TMap<HWND, std::shared_ptr<FRawInput>> RawInputHandlerMap;
+    std::shared_ptr<FRawInput> RawInputHandler;
 
 private:
     void HandleRawInput(HWND AppWnd, const RAWINPUT& RawInput);

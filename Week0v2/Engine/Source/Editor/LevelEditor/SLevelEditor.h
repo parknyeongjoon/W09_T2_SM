@@ -1,4 +1,5 @@
 #pragma once
+#include "Delegates/Delegate.h"
 #include "Math/Vector.h"
 #include "Runtime/Engine/Classes/Engine/FEditorStateManager.h"
 #include "UObject/ObjectTypes.h"
@@ -26,31 +27,13 @@ public:
     std::shared_ptr<SSplitterV> VSplitter;
 
 public:
-    void SetMode(ControlMode _Mode)
-    {
-        cMode = _Mode;
-    }
-    ControlMode GetControlMode() const
-    {
-        return cMode;
-    }
+    void SetMode(ControlMode _Mode) { cMode = _Mode; }
+    ControlMode GetControlMode() const { return cMode; }
     CoordiMode GetCoordiMode() const { return cdMode; }
+    void AddControlMode() { cMode = static_cast<ControlMode>((cMode + 1) % CM_END); }
+    void AddCoordiMode() { cdMode = static_cast<CoordiMode>((cdMode + 1) % CDM_END); }
     
-    std::shared_ptr<FEditorViewportClient> GetActiveViewportClient()
-    {
-        return ViewportClients[ActiveViewportIndex];
-    }
-
-    
-    void AddControlMode()
-    {
-        cMode = static_cast<ControlMode>((cMode + 1) % CM_END);
-    }
-
-    void AddCoordiMode()
-    {
-        cdMode = static_cast<CoordiMode>((cdMode + 1) % CDM_END);
-    }
+    std::shared_ptr<FEditorViewportClient> GetActiveViewportClient() { return ViewportClients[ActiveViewportIndex]; }
 
     FWindowViewportClientData()
         : EditorWidth(0.0f)
@@ -68,6 +51,7 @@ class SLevelEditor
 public:
     SLevelEditor();
     ~SLevelEditor() = default;
+
     void Initialize(UWorld* World, HWND OwnerWindow);
     void Tick(double DeltaTime);
     void Release();
@@ -78,21 +62,27 @@ public:
 
     void RemoveViewportClient(HWND OwnerWindow, std::shared_ptr<FEditorViewportClient> ViewportClient);
     void RemoveViewportClients(HWND HWnd);
-    
-    void SelectViewport(HWND AppWnd, FVector2D Point);
+
     void ResizeWindow(HWND AppWnd, FVector2D ClientSize);
     void ResizeViewports(HWND AppWnd);
+
+    void SelectViewport(HWND AppWnd, FVector2D Point);
     void SetEnableMultiViewport(HWND AppWnd, bool bIsEnable);
     bool IsMultiViewport(HWND AppWnd);
+
+    void RegisterEditorInputDelegates();
+    void RegisterPIEInputDelegates();
+
 private:
     // TArray<std::shared_ptr<FEditorViewportClient>> ViewportClients;
 
     uint32 ActiveViewportClientIndex = 0;
     HWND ActiveViewportWindow = nullptr;
-    
 
     /** 우클릭 시 캡처된 마우스 커서의 초기 위치 (스크린 좌표계) */
     FVector2D MousePinPosition;
+
+    TArray<FDelegateHandle> InputDelegatesHandles;
     
     FEditorStateManager EditorStateManager;
 
@@ -149,7 +139,8 @@ public:
     }
 
     FEditorStateManager& GetEditorStateManager() { return EditorStateManager; }
-    //Save And Load
+
+/* Save And Load*/
 private:
     const FString IniFilePath = "editor.ini";
 public:
@@ -172,5 +163,6 @@ private:
         }
         return defaultValue;
     }
+/* End of Save And Load */
 };
 

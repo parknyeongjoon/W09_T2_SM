@@ -34,290 +34,11 @@ void SLevelEditor::Initialize(UWorld* World, HWND OwnerWindow)
     HSplitter->Initialize(FRect(0, 0, WindowViewportDataMap[OwnerWindow].EditorWidth, WindowViewportDataMap[OwnerWindow].EditorHeight));
     WindowViewportDataMap[OwnerWindow].HSplitter = HSplitter;
 
-    // Check Resize
-    
     LoadConfig();
 
     FSlateAppMessageHandler* Handler = GEngineLoop.GetAppMessageHandler();
-    
-    Handler->OnMouseDownDelegate.AddLambda([this](const FPointerEvent& InMouseEvent, HWND AppWnd)
-    {
-        if (ImGuiManager::Get().GetWantCaptureMouse(AppWnd)) return;
 
-        if (!WindowViewportDataMap.Contains(AppWnd))
-        {
-            return;
-        }
-        FWindowViewportClientData& WindowViewportData = WindowViewportDataMap[AppWnd];
-
-        if (WindowViewportData.ViewportClients.Num() == 0)
-        {
-            return;
-        }
-
-        UWorld* World = WindowViewportData.ViewportClients[0]->GetWorld();
-        if (World->WorldType != EWorldType::Editor && World->WorldType != EWorldType::EditorPreview)
-        {
-            return;
-        }
-        
-        switch (InMouseEvent.GetEffectingButton())  // NOLINT(clang-diagnostic-switch-enum)
-        {
-        case EKeys::RightMouseButton:
-        {
-            if (!InMouseEvent.IsMouseButtonDown(EKeys::LeftMouseButton))
-            {
-                FWindowsCursor::SetShowMouseCursor(false);
-                MousePinPosition = InMouseEvent.GetScreenSpacePosition();
-            }
-            break;
-        }
-        default:
-            break;
-        }
-
-        FVector2D ClientPos = FWindowsCursor::GetClientPosition(AppWnd);
-        SelectViewport(AppWnd, ClientPos);
-        
-        // 마우스 이벤트가 일어난 위치의 뷰포트를 선택
-        if (WindowViewportData.VSplitter)
-        {
-            WindowViewportData.VSplitter->OnPressed(FPoint(ClientPos.X, ClientPos.Y));
-        }
-        if (WindowViewportData.HSplitter)
-        {
-            WindowViewportData.HSplitter->OnPressed(FPoint(ClientPos.X, ClientPos.Y));
-        }
-    });
-    
-    Handler->OnMouseMoveDelegate.AddLambda([this](const FPointerEvent& InMouseEvent, HWND AppWnd)
-    {
-        if (ImGuiManager::Get().GetWantCaptureMouse(AppWnd))
-        {
-            return;
-        }
-
-        if (!WindowViewportDataMap.Contains(AppWnd))
-        {
-            return;
-        }
-        
-        FWindowViewportClientData& WindowViewportData = WindowViewportDataMap[AppWnd];
-    
-        // Splitter 움직임 로직
-        if (InMouseEvent.IsMouseButtonDown(EKeys::LeftMouseButton))
-        {
-            const auto& [DeltaX, DeltaY] = InMouseEvent.GetCursorDelta();
-            
-            bool bSplitterDragging = false;
-            if (WindowViewportData.VSplitter && WindowViewportData.VSplitter->IsSplitterPressed())
-            {
-                WindowViewportData.VSplitter->OnDrag(FPoint(DeltaX, DeltaY));
-                bSplitterDragging = true;
-            }
-            if (WindowViewportData.HSplitter && WindowViewportData.HSplitter->IsSplitterPressed())
-            {
-                WindowViewportData.HSplitter->OnDrag(FPoint(DeltaX, DeltaY));
-                bSplitterDragging = true;
-            }
-    
-            if (bSplitterDragging)
-            {
-                ResizeViewports(AppWnd);
-            }
-        }
-    
-        // 멀티 뷰포트일 때, 커서 변경 로직
-        if (WindowViewportData.bMultiViewportMode && !InMouseEvent.IsMouseButtonDown(EKeys::LeftMouseButton) && !InMouseEvent.IsMouseButtonDown(EKeys::RightMouseButton))
-        {
-            // TODO: 나중에 커서가 Viewport 위에 있을때만 ECursorType::Crosshair로 바꾸게끔 하기
-            // ECursorType CursorType = ECursorType::Crosshair;
-            ECursorType CursorType = ECursorType::Arrow;
-            
-            FVector2D ClientPos = FWindowsCursor::GetClientPosition(AppWnd);
-            const bool bIsVerticalHovered = WindowViewportData.VSplitter ? WindowViewportData.VSplitter->IsHover(FPoint{ClientPos.X, ClientPos.Y}) : false;
-            const bool bIsHorizontalHovered = WindowViewportData.HSplitter ? WindowViewportData.HSplitter->IsHover(FPoint{ClientPos.X, ClientPos.Y}) : false;
-    
-            if (bIsHorizontalHovered && bIsVerticalHovered)
-            {
-                CursorType = ECursorType::ResizeAll;
-            }
-            else if (bIsHorizontalHovered)
-            {
-                CursorType = ECursorType::ResizeLeftRight;
-            }
-            else if (bIsVerticalHovered)
-            {
-                CursorType = ECursorType::ResizeUpDown;
-            }
-            FWindowsCursor::SetMouseCursor(CursorType);
-        }
-
-        std::shared_ptr<FEditorViewportClient> ActiveViewportClient = WindowViewportData.GetActiveViewportClient();
-
-        if (WindowViewportData.ViewportClients.Num() == 0)
-        {
-            return;
-        }
-
-        UWorld* World = WindowViewportData.ViewportClients[0]->GetWorld();
-        if (World->WorldType != EWorldType::Editor && World->WorldType != EWorldType::EditorPreview)
-        {
-            return;
-        }
-        
-        if (InMouseEvent.IsMouseButtonDown(EKeys::RightMouseButton))
-        {
-            // Mouse Move 이벤트 일때만 실행
-            if (InMouseEvent.GetInputEvent() == IE_Axis && InMouseEvent.GetEffectingButton() == EKeys::Invalid)
-            {
-                // 에디터 카메라 이동 로직
-                if (!InMouseEvent.IsMouseButtonDown(EKeys::LeftMouseButton) && InMouseEvent.IsMouseButtonDown(EKeys::RightMouseButton))
-                {
-                    ActiveViewportClient->MouseMove(InMouseEvent);
-                }
-            }
-        }
-    });
-    
-    Handler->OnMouseUpDelegate.AddLambda([this](const FPointerEvent& InMouseEvent, HWND AppWnd)
-    {
-        if (!WindowViewportDataMap.Contains(AppWnd))
-        {
-            return;
-        }
-
-        FWindowViewportClientData& WindowViewportData = WindowViewportDataMap[AppWnd];
-        
-        switch (InMouseEvent.GetEffectingButton())  // NOLINT(clang-diagnostic-switch-enum)
-        {
-        case EKeys::RightMouseButton:
-            {
-                FWindowsCursor::SetShowMouseCursor(true);
-                FWindowsCursor::SetPosition(
-                    static_cast<int32>(MousePinPosition.X),
-                    static_cast<int32>(MousePinPosition.Y)
-                );
-                break;
-            }
-        case EKeys::LeftMouseButton:
-            {
-                if (WindowViewportData.VSplitter)
-                {
-                    WindowViewportData.VSplitter->OnReleased();
-                }
-                if (WindowViewportData.HSplitter)
-                {
-                    WindowViewportData.HSplitter->OnReleased();
-                }
-                break;
-            }
-        default:
-            break;
-        }
-    });
-    
-    Handler->OnMouseWheelDelegate.AddLambda([this](const FPointerEvent& InMouseEvent, HWND AppWnd)
-    {
-        if (!WindowViewportDataMap.Contains(AppWnd))
-        {
-            return;
-        }
-        
-        FWindowViewportClientData& WindowViewportClientData = WindowViewportDataMap[AppWnd];
-        
-        if (ImGuiManager::Get().GetWantCaptureMouse(AppWnd))
-        {
-            return;
-        }
-
-        std::shared_ptr<FEditorViewportClient> ActiveViewportClient = WindowViewportClientData.GetActiveViewportClient();
-        
-        // 뷰포트에서 앞뒤 방향으로 화면 이동
-        if (ActiveViewportClient->IsPerspective())
-        {
-            if (InMouseEvent.IsMouseButtonDown(EKeys::RightMouseButton))
-            {
-                // 카메라 속도 조절
-                if (ActiveViewportClient->IsPerspective())
-                {
-                    const float CurrentSpeed = ActiveViewportClient->GetCameraSpeedScalar();
-                    const float Adjustment = FMath::Sign(InMouseEvent.GetWheelDelta()) * FMath::Loge(CurrentSpeed + 1.0f) * 0.5f;
-            
-                    ActiveViewportClient->SetCameraSpeed(CurrentSpeed + Adjustment);
-                }
-            }
-            else
-            {
-                const FVector CameraLoc = ActiveViewportClient->ViewTransformPerspective.GetLocation();
-                const FVector CameraForward = ActiveViewportClient->ViewTransformPerspective.GetForwardVector();
-                ActiveViewportClient->ViewTransformPerspective.SetLocation(CameraLoc + CameraForward * InMouseEvent.GetWheelDelta() * 50.0f);
-            }
-        }
-        else
-        {
-            // TODO Ortho Static 빼야됨.
-            FEditorViewportClient::SetOrthoSize(FEditorViewportClient::GetOrthoSize() + (-InMouseEvent.GetWheelDelta()));
-        }
-    });
-
-    Handler->OnKeyDownDelegate.AddLambda([this](const FKeyEvent& InKeyEvent, HWND AppWnd)
-    {
-        if (!WindowViewportDataMap.Contains(AppWnd))
-        {
-            return;
-        }
-        
-        FWindowViewportClientData& WindowViewportClientData = WindowViewportDataMap[AppWnd];
-        WindowViewportClientData.GetActiveViewportClient()->InputKey(AppWnd, InKeyEvent);
-
-        if (GetKeyState(VK_RBUTTON) & 0x8000)
-        {
-            return;
-        }
-        
-        if (InKeyEvent.GetInputEvent() != IE_Pressed)
-        {
-            return;
-        }
-        
-        switch (InKeyEvent.GetCharacter())
-        {
-        case 'Q':
-            {
-                //GetWorld()->SetPickingObj(nullptr);
-                break;
-            }
-        case 'W':
-            {
-                WindowViewportClientData.SetMode(CM_TRANSLATION);
-                break;
-            }
-        case 'E':
-            {
-                WindowViewportClientData.SetMode(CM_ROTATION);
-                break;
-            }
-        case 'R':
-            {
-                WindowViewportClientData.SetMode(CM_SCALE);
-                break;
-            }
-        default:
-            break;
-        }
-    });
-    
-    Handler->OnKeyUpDelegate.AddLambda([this](const FKeyEvent& InKeyEvent, HWND AppWnd)
-    {
-        if (!WindowViewportDataMap.Contains(AppWnd))
-        {
-            return;
-        }
-        
-        FWindowViewportClientData WindowViewportClientData = WindowViewportDataMap[AppWnd];
-        WindowViewportClientData.GetActiveViewportClient()->InputKey(AppWnd, InKeyEvent);
-    });
+    RegisterEditorInputDelegates();
 }
 
 void SLevelEditor::Tick(double DeltaTime)
@@ -577,3 +298,320 @@ void SLevelEditor::WriteIniFile(const FString& filePath, const TMap<FString, FSt
     }
 }
 
+void SLevelEditor::RegisterEditorInputDelegates()
+{
+    FSlateAppMessageHandler* Handler = GEngineLoop.GetAppMessageHandler();
+
+    // Clear current delegate functions
+    for (const FDelegateHandle& Handle : InputDelegatesHandles)
+    {
+        Handler->OnKeyCharDelegate.Remove(Handle);
+        Handler->OnKeyDownDelegate.Remove(Handle);
+        Handler->OnKeyUpDelegate.Remove(Handle);
+
+        Handler->OnMouseDownDelegate.Remove(Handle);
+        Handler->OnMouseUpDelegate.Remove(Handle);
+        Handler->OnMouseDoubleClickDelegate.Remove(Handle);
+        Handler->OnMouseWheelDelegate.Remove(Handle);
+        Handler->OnMouseMoveDelegate.Remove(Handle);
+
+        Handler->OnRawMouseInputDelegate.Remove(Handle);
+        Handler->OnRawKeyboardInputDelegate.Remove(Handle);
+    }
+
+    // Mouse Inputs
+    {
+        InputDelegatesHandles.Add(Handler->OnMouseDownDelegate.AddLambda([this](const FPointerEvent& InMouseEvent, HWND AppWnd)
+            {
+                if (ImGuiManager::Get().GetWantCaptureMouse(AppWnd))
+                {
+                    return;
+                }
+
+                if (!WindowViewportDataMap.Contains(AppWnd))
+                {
+                    return;
+                }
+
+                FWindowViewportClientData& WindowViewportData = WindowViewportDataMap[AppWnd];
+
+                switch (InMouseEvent.GetEffectingButton())  // NOLINT(clang-diagnostic-switch-enum)
+                {
+                case EKeys::RightMouseButton:
+                {
+                    if (!InMouseEvent.IsMouseButtonDown(EKeys::LeftMouseButton))
+                    {
+                        FWindowsCursor::SetShowMouseCursor(false);
+                        MousePinPosition = InMouseEvent.GetScreenSpacePosition();
+                    }
+                    break;
+                }
+                default:
+                    break;
+                }
+
+                const FVector2D ClientPos = FWindowsCursor::GetClientPosition(AppWnd);
+                SelectViewport(AppWnd, ClientPos);
+
+                if (WindowViewportData.bMultiViewportMode)
+                {
+                    WindowViewportData.VSplitter->OnPressed(FPoint(ClientPos.X, ClientPos.Y));
+                    WindowViewportData.HSplitter->OnPressed(FPoint(ClientPos.X, ClientPos.Y));
+                }
+            }));
+
+        InputDelegatesHandles.Add(Handler->OnMouseUpDelegate.AddLambda([this](const FPointerEvent& InMouseEvent, HWND AppWnd)
+            {
+                if (!WindowViewportDataMap.Contains(AppWnd))
+                {
+                    return;
+                }
+
+                FWindowViewportClientData& WindowViewportData = WindowViewportDataMap[AppWnd];
+
+                switch (InMouseEvent.GetEffectingButton())  // NOLINT(clang-diagnostic-switch-enum)
+                {
+                case EKeys::RightMouseButton:
+                {
+                    FWindowsCursor::SetShowMouseCursor(true);
+                    FWindowsCursor::SetPosition(
+                        static_cast<int32>(MousePinPosition.X),
+                        static_cast<int32>(MousePinPosition.Y)
+                    );
+
+                    // @todo ImGui로 피킹된 액터의 옵션 메뉴 표기
+                    return;
+                }
+                case EKeys::LeftMouseButton:
+                {
+                    if (WindowViewportData.VSplitter)
+                    {
+                        WindowViewportData.VSplitter->OnReleased();
+                    }
+                    if (WindowViewportData.HSplitter)
+                    {
+                        WindowViewportData.HSplitter->OnReleased();
+                    }
+                    return;
+                }
+                default:
+                    return;
+                }
+            }));
+
+        InputDelegatesHandles.Add(Handler->OnMouseMoveDelegate.AddLambda([this](const FPointerEvent& InMouseEvent, HWND AppWnd)
+            {
+                if (ImGuiManager::Get().GetWantCaptureMouse(AppWnd))
+                {
+                    return;
+                }
+
+                if (!WindowViewportDataMap.Contains(AppWnd))
+                {
+                    return;
+                }
+
+                FWindowViewportClientData& WindowViewportData = WindowViewportDataMap[AppWnd];
+
+                // @todo ImGui 패널 Slate 적용 후 대응
+                // Splitter 움직임 로직
+                if (InMouseEvent.IsMouseButtonDown(EKeys::LeftMouseButton))
+                {
+                    const auto& [DeltaX, DeltaY] = InMouseEvent.GetCursorDelta();
+
+                    bool bSplitterDragging = false;
+                    if (WindowViewportData.VSplitter && WindowViewportData.VSplitter->IsSplitterPressed())
+                    {
+                        WindowViewportData.VSplitter->OnDrag(FPoint(DeltaX, DeltaY));
+                        bSplitterDragging = true;
+                    }
+                    if (WindowViewportData.HSplitter && WindowViewportData.HSplitter->IsSplitterPressed())
+                    {
+                        WindowViewportData.HSplitter->OnDrag(FPoint(DeltaX, DeltaY));
+                        bSplitterDragging = true;
+                    }
+
+                    if (bSplitterDragging)
+                    {
+                        ResizeViewports(AppWnd);
+                    }
+                }
+
+                // @todo ImGui 패널 Slate 적용 후 대응
+                // 커서 변경 로직
+                if (WindowViewportData.bMultiViewportMode && !InMouseEvent.IsMouseButtonDown(EKeys::LeftMouseButton) && !InMouseEvent.IsMouseButtonDown(EKeys::RightMouseButton))
+                {
+                    // @todo ImGui 패널 Slate 적용 후 커서가 Viewport 위에 있을때만 ECursorType::Crosshair로 표기
+                    ECursorType CursorType = ECursorType::Arrow;
+
+                    FVector2D ClientPos = FWindowsCursor::GetClientPosition(AppWnd);
+                    const bool bIsVerticalHovered = WindowViewportData.VSplitter ? WindowViewportData.VSplitter->IsHover(FPoint{ ClientPos.X, ClientPos.Y }) : false;
+                    const bool bIsHorizontalHovered = WindowViewportData.HSplitter ? WindowViewportData.HSplitter->IsHover(FPoint{ ClientPos.X, ClientPos.Y }) : false;
+
+                    if (bIsHorizontalHovered && bIsVerticalHovered)
+                    {
+                        CursorType = ECursorType::ResizeAll;
+                    }
+                    if (bIsHorizontalHovered)
+                    {
+                        CursorType = ECursorType::ResizeLeftRight;
+                    }
+                    else if (bIsVerticalHovered)
+                    {
+                        CursorType = ECursorType::ResizeUpDown;
+                    }
+
+                    FWindowsCursor::SetMouseCursor(CursorType);
+                }
+            }));
+
+        InputDelegatesHandles.Add(Handler->OnMouseWheelDelegate.AddLambda([this](const FPointerEvent& InMouseEvent, HWND AppWnd)
+            {
+                if (ImGuiManager::Get().GetWantCaptureMouse(AppWnd))
+                {
+                    return;
+                }
+
+                if (!WindowViewportDataMap.Contains(AppWnd))
+                {
+                    return;
+                }
+
+                FWindowViewportClientData& WindowViewportClientData = WindowViewportDataMap[AppWnd];
+                std::shared_ptr<FEditorViewportClient> ActiveViewportClient = WindowViewportClientData.GetActiveViewportClient();
+
+                // 뷰포트에서 앞뒤 방향으로 화면 이동
+                if (ActiveViewportClient->IsPerspective())
+                {
+                    if (!InMouseEvent.IsMouseButtonDown(EKeys::RightMouseButton))
+                    {
+                        const FVector CameraLoc = ActiveViewportClient->ViewTransformPerspective.GetLocation();
+                        const FVector CameraForward = ActiveViewportClient->ViewTransformPerspective.GetForwardVector();
+                        ActiveViewportClient->ViewTransformPerspective.SetLocation(CameraLoc + CameraForward * InMouseEvent.GetWheelDelta() * 50.0f);
+                    }
+                }
+                else
+                {
+                    FEditorViewportClient::SetOrthoSize(-InMouseEvent.GetWheelDelta());
+                }
+            }));
+    }
+
+    // Keyboard Inputs
+    {
+        InputDelegatesHandles.Add(Handler->OnKeyDownDelegate.AddLambda([this](const FKeyEvent& InKeyEvent, HWND AppWnd)
+            {
+                if (ImGuiManager::Get().GetWantCaptureKeyboard(AppWnd))
+                {
+                    return;
+                }
+
+                if (!WindowViewportDataMap.Contains(AppWnd))
+                {
+                    return;
+                }
+
+                FWindowViewportClientData& WindowViewportClientData = WindowViewportDataMap[AppWnd];
+                WindowViewportClientData.GetActiveViewportClient()->InputKey(AppWnd, InKeyEvent);
+
+                if (GetKeyState(VK_RBUTTON) & 0x8000)
+                {
+                    return;
+                }
+
+                if (InKeyEvent.GetInputEvent() != IE_Pressed)
+                {
+                    return;
+                }
+
+                switch (InKeyEvent.GetCharacter())
+                {
+                case 'Q':
+                    {
+                        break;
+                    }
+                case 'W':
+                    {
+                        WindowViewportClientData.SetMode(CM_TRANSLATION);
+                        break;
+                    }
+                case 'E':
+                    {
+                        WindowViewportClientData.SetMode(CM_ROTATION);
+                        break;
+                    }
+                case 'R':
+                    {
+                        WindowViewportClientData.SetMode(CM_SCALE);
+                        break;
+                    }
+                default:
+                    break;
+                }
+            }));
+
+        InputDelegatesHandles.Add(Handler->OnKeyUpDelegate.AddLambda([this](const FKeyEvent& InKeyEvent, HWND AppWnd)
+            {
+                if (ImGuiManager::Get().GetWantCaptureKeyboard(AppWnd))
+                {
+                    return;
+                }
+
+                if (!WindowViewportDataMap.Contains(AppWnd))
+                {
+                    return;
+                }
+
+                FWindowViewportClientData WindowViewportClientData = WindowViewportDataMap[AppWnd];
+                WindowViewportClientData.GetActiveViewportClient()->InputKey(AppWnd, InKeyEvent);
+            }));
+    }
+
+    // Raw Inputs
+    {
+        InputDelegatesHandles.Add(Handler->OnRawMouseInputDelegate.AddLambda([this](const FPointerEvent& InMouseEvent, HWND AppWnd)
+            {
+                if (ImGuiManager::Get().GetWantCaptureMouse(AppWnd))
+                {
+                    return;
+                }
+
+                if (!WindowViewportDataMap.Contains(AppWnd))
+                {
+                    return;
+                }
+
+                FWindowViewportClientData& WindowViewportClientData = WindowViewportDataMap[AppWnd];
+                std::shared_ptr<FEditorViewportClient> ActiveViewportClient = WindowViewportClientData.GetActiveViewportClient();
+
+                // Mouse Move 이벤트 일때만 실행
+                if (InMouseEvent.GetInputEvent() == IE_Axis
+                    && InMouseEvent.GetEffectingButton() == EKeys::Invalid)
+                {
+                    // 에디터 카메라 이동 로직
+                    if (!InMouseEvent.IsMouseButtonDown(EKeys::LeftMouseButton)
+                        && InMouseEvent.IsMouseButtonDown(EKeys::RightMouseButton))
+                    {
+                        ActiveViewportClient->MouseMove(InMouseEvent);
+                    }
+                    // @todo Gizmo 컨트롤 로직 확인할 것
+                }
+                // 마우스 휠 이벤트
+                else if (InMouseEvent.GetEffectingButton() == EKeys::MouseWheelAxis)
+                {
+                    // 카메라 속도 조절
+                    if (InMouseEvent.IsMouseButtonDown(EKeys::RightMouseButton) && ActiveViewportClient->IsPerspective())
+                    {
+                        const float CurrentSpeed = ActiveViewportClient->GetCameraSpeedScalar();
+                        const float Adjustment = FMath::Sign(InMouseEvent.GetWheelDelta()) * FMath::Loge(CurrentSpeed + 1.0f) * 0.5f;
+
+                        ActiveViewportClient->SetCameraSpeed(CurrentSpeed + Adjustment);
+                    }
+                }
+            }));
+    }
+}
+
+void SLevelEditor::RegisterPIEInputDelegates()
+{
+}

@@ -1,4 +1,4 @@
-﻿// ReSharper disable CppClangTidyPerformanceNoIntToPtr
+// ReSharper disable CppClangTidyPerformanceNoIntToPtr
 // ReSharper disable CppMemberFunctionMayBeConst
 
 #include "RawInput.h"
@@ -10,18 +10,13 @@
 #define HID_USAGE_GENERIC_KEYBOARD     ((USHORT) 0x06)
 
 
-FRawInput::FRawInput(HWND hWnd, InputCallback InCallback)
-    : AppWnd(hWnd)
-    , Callback(std::move(InCallback))
+FRawInput::FRawInput(InputCallback InCallback)
+    : Callback(std::move(InCallback))
 {
-    if (!hWnd)
-    {
-        throw std::invalid_argument("HWND cannot be null.");
-    }
     RegisterDevices();
 }
 
-void FRawInput::ProcessRawInput(LPARAM lParam) const
+void FRawInput::ProcessRawInput(HWND AppWnd, LPARAM lParam) const
 {
     uint32 DataSize = 0;
 
@@ -42,7 +37,7 @@ void FRawInput::ProcessRawInput(LPARAM lParam) const
     const RAWINPUT* RawInput = reinterpret_cast<const RAWINPUT*>(Buffer.GetData());
     if (Callback)
     {
-        Callback(*RawInput, AppWnd);
+        Callback(AppWnd, *RawInput);
     }
 }
 
@@ -59,7 +54,7 @@ void FRawInput::RegisterDevices()
         HID_USAGE_GENERIC_KEYBOARD,        // 키보드 사용
         // RIDEV_INPUTSINK | RIDEV_DEVNOTIFY, // 백그라운드 입력 수신 및 장치 변경시 알림
         RIDEV_DEVNOTIFY,
-        AppWnd                             // RawInput 메시지를 받을 대상 창
+        NULL                             // RawInput 메시지를 받을 대상 창 (NULL로 설정하여 등록 시점의 포커스 윈도우에서 처리)
     };
 
     if (!RegisterRawInputDevices(&KeyboardRid, 1, sizeof(KeyboardRid)))
@@ -74,7 +69,7 @@ void FRawInput::RegisterDevices()
         HID_USAGE_GENERIC_MOUSE,           // 마우스 사용
         // RIDEV_INPUTSINK | RIDEV_DEVNOTIFY, // 백그라운드 입력 수신 및 장치 변경시 알림
         RIDEV_DEVNOTIFY,
-        AppWnd                             // RawInput 메시지를 받을 대상 창
+        NULL                             // RawInput 메시지를 받을 대상 창 (NULL로 설정하여 등록 시점의 포커스 윈도우에서 처리)
     };
 
     if (!RegisterRawInputDevices(&MouseRid, 1, sizeof(MouseRid)))

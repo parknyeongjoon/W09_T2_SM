@@ -26,6 +26,7 @@ using namespace DirectX;
 
 void UEditorPlayer::Initialize()
 {
+    /*
     FSlateAppMessageHandler* Handler = GEngineLoop.GetAppMessageHandler();
     Handler->OnMouseDownDelegate.AddLambda([this](const FPointerEvent& InMouseEvent, HWND AppWnd)
     {
@@ -188,6 +189,7 @@ void UEditorPlayer::Initialize()
             bLAltDown = false;
         }
     });
+    */
 }
 
 void UEditorPlayer::MultiSelectingStart()

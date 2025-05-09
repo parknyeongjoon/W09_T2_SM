@@ -319,12 +319,6 @@ void UWorld::BeginPlay()
             PlayerCameraManager = CameraManager;
         }
     }
-
-}
-
-UWorld* UWorld::DuplicateWorldForPIE(UWorld* world)
-{
-    return new UWorld();
 }
 
 // AActor* SpawnActorByName(const FString& ActorName, UObject* InOuter, bool bCallBeginPlay)

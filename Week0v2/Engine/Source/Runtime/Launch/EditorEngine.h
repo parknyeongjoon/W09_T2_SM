@@ -17,10 +17,12 @@ class UEditorEngine : public UEngine
     DECLARE_CLASS(UEditorEngine, UEngine)
     
 public:
-    UEditorEngine();
+    UEditorEngine() = default;
+
     void Init() override;
     void Tick(float DeltaTime) override;
     void Release() override;
+
     void Input();
     
     void PreparePIE();

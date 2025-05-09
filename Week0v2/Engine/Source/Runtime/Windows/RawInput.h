@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <functional>
 #include <string>
 
@@ -8,9 +8,9 @@
 class FRawInput
 {
 public:
-    using InputCallback = std::function<void(const RAWINPUT& RawInput, HWND AppWnd)>;
+    using InputCallback = std::function<void(HWND AppWnd, const RAWINPUT& RawInput)>;
 
-    FRawInput(HWND hWnd, InputCallback InCallback);
+    FRawInput(InputCallback InCallback);
 
     ~FRawInput()
     {
@@ -24,7 +24,7 @@ public:
 
 public:
     // 메시지 처리 함수
-    void ProcessRawInput(LPARAM lParam) const;
+    void ProcessRawInput(HWND AppWnd, LPARAM lParam) const;
 
     void ReRegisterDevices()
     {
@@ -42,7 +42,6 @@ private:
     static void LogRawInput(LogLevel Level, const std::string& Message);
 
 private:
-    HWND AppWnd;
     InputCallback Callback;
 
     bool bIsValid = false;

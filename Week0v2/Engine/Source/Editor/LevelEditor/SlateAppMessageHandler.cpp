@@ -1,4 +1,4 @@
-﻿// ReSharper disable CppMemberFunctionMayBeConst
+// ReSharper disable CppMemberFunctionMayBeConst
 #include "SlateAppMessageHandler.h"
 
 #define _TCHAR_DEFINED
@@ -20,6 +20,11 @@ FSlateAppMessageHandler::FSlateAppMessageHandler()
     {
         KeyState = false;
     }
+
+    RawInputHandler = std::make_unique<FRawInput>([this](HWND AppWnd, const RAWINPUT& RawInput)
+    {
+        HandleRawInput(AppWnd, RawInput);
+    });
 }
 
 void FSlateAppMessageHandler::HandleRawInput(HWND AppWnd, const RAWINPUT& RawInput)
@@ -34,7 +39,7 @@ void FSlateAppMessageHandler::HandleRawInput(HWND AppWnd, const RAWINPUT& RawInp
     }
 }
 
-void FSlateAppMessageHandler::ProcessMessage(HWND hWnd, uint32 Msg, WPARAM wParam, LPARAM lParam)
+void FSlateAppMessageHandler::ProcessMessage(HWND AppWnd, uint32 Msg, WPARAM wParam, LPARAM lParam)
 {
     switch (Msg)
     {
@@ -52,11 +57,11 @@ void FSlateAppMessageHandler::ProcessMessage(HWND hWnd, uint32 Msg, WPARAM wPara
 
             // lParam의 30번째 비트(0x40000000)는 키가 계속 눌려져 있는 상태(키 반복)인지 확인
             const bool bIsRepeat = (lParam & 0x40000000) != 0;
-            OnKeyChar(hWnd, Character, bIsRepeat);
+            OnKeyChar(AppWnd, Character, bIsRepeat);
             return;
         }
 
-        // 키보드 키가 눌렸을 때 발생하는 메시지
+    // 키보드 키가 눌렸을 때 발생하는 메시지
     case WM_SYSKEYDOWN:
     case WM_KEYDOWN:
         {
@@ -136,7 +141,7 @@ void FSlateAppMessageHandler::ProcessMessage(HWND hWnd, uint32 Msg, WPARAM wPara
             }
 
             const uint32 CharCode = ::MapVirtualKey(Win32Key, MAPVK_VK_TO_CHAR);
-            OnKeyDown(hWnd, ActualKey, CharCode, bIsRepeat);
+            OnKeyDown(AppWnd, ActualKey, CharCode, bIsRepeat);
             return;
         }
 
@@ -214,7 +219,7 @@ void FSlateAppMessageHandler::ProcessMessage(HWND hWnd, uint32 Msg, WPARAM wPara
 
             // Key up events are never repeats
             constexpr bool bIsRepeat = false;
-            OnKeyUp(hWnd, ActualKey, CharCode, bIsRepeat);
+            OnKeyUp(AppWnd, ActualKey, CharCode, bIsRepeat);
             return;
         }
 
@@ -236,7 +241,7 @@ void FSlateAppMessageHandler::ProcessMessage(HWND hWnd, uint32 Msg, WPARAM wPara
             CursorPoint.x = GET_X_LPARAM(lParam);
             CursorPoint.y = GET_Y_LPARAM(lParam);
 
-            ClientToScreen(hWnd, &CursorPoint);
+            ClientToScreen(AppWnd, &CursorPoint);
 
             const FVector2D CursorPos{
                 static_cast<float>(CursorPoint.x),
@@ -298,15 +303,15 @@ void FSlateAppMessageHandler::ProcessMessage(HWND hWnd, uint32 Msg, WPARAM wPara
 
             if (bMouseUp)
             {
-                OnMouseUp(hWnd, MouseButton, CursorPos);
+                OnMouseUp(AppWnd, MouseButton, CursorPos);
             }
             else if (bDoubleClick)
             {
-                OnMouseDoubleClick(hWnd, MouseButton, CursorPos);
+                OnMouseDoubleClick(AppWnd, MouseButton, CursorPos);
             }
             else
             {
-                OnMouseDown(hWnd, MouseButton, CursorPos);
+                OnMouseDown(AppWnd, MouseButton, CursorPos);
             }
             return;
         }
@@ -316,7 +321,7 @@ void FSlateAppMessageHandler::ProcessMessage(HWND hWnd, uint32 Msg, WPARAM wPara
     case WM_MOUSEMOVE:   // 클라이언트 영역에서 마우스가 움직였을 때 발생하는 메시지
         {
             UpdateCursorPosition(FWindowsCursor::GetPosition());
-            OnMouseMove(hWnd); // TODO: UE [WindowsApplication.cpp:2286]
+            OnMouseMove(AppWnd); // TODO: UE [WindowsApplication.cpp:2286]
             return;
         }
 
@@ -334,18 +339,14 @@ void FSlateAppMessageHandler::ProcessMessage(HWND hWnd, uint32 Msg, WPARAM wPara
                 static_cast<float>(CursorPoint.x),
                 static_cast<float>(CursorPoint.y)
             };
-            OnMouseWheel(hWnd, static_cast<float>(WheelDelta) * SpinFactor, CursorPos);
+            OnMouseWheel(AppWnd, static_cast<float>(WheelDelta) * SpinFactor, CursorPos);
             return;
         }
 
     case WM_INPUT:
         {
-            // TODO - HWnd가 마지막으로 생성한 HWnd만 들어옴.
-
-
-            
             // RawInput을 처리하는 부분
-            //RawInputHandlerMap[hWnd]->ProcessRawInput(lParam);
+            RawInputHandler->ProcessRawInput(AppWnd, lParam);
             return;
         }
 
@@ -356,25 +357,6 @@ void FSlateAppMessageHandler::ProcessMessage(HWND hWnd, uint32 Msg, WPARAM wPara
             return;
         }
     }
-}
-
-void FSlateAppMessageHandler::AddWindow(HWND AppWnd)
-{
-    std::shared_ptr<FRawInput> RawInputHandler = std::make_shared<FRawInput>(AppWnd, [this](const RAWINPUT& RawInput, HWND AppWnd)
-        {
-            HandleRawInput(AppWnd, RawInput);
-        });
-    RawInputHandlerMap.Add(AppWnd, std::move(RawInputHandler));
-}
-
-void FSlateAppMessageHandler::RemoveWindow(HWND AppWnd)
-{
-    if (!RawInputHandlerMap.Contains(AppWnd))
-    {
-        return;
-    }
-    
-    RawInputHandlerMap.Remove(AppWnd);
 }
 
 void FSlateAppMessageHandler::OnKeyChar(HWND AppWnd, const TCHAR Character, const bool IsRepeat)

@@ -25,7 +25,7 @@ class UWorld final : public UObject
 public:
     UWorld() = default;
     UWorld(const UWorld& Other);
-    ;
+
     void InitWorld();
     void LoadLevel(const FString& LevelName);
     void PreLoadResources();
@@ -122,10 +122,6 @@ public:
     // 임시
     bool IsPIEWorld() const;
     void BeginPlay();
-    static UWorld* DuplicateWorldForPIE(UWorld* world);
-
-
-
 };
 
 inline void UWorld::SaveScene(const FString& FileName)

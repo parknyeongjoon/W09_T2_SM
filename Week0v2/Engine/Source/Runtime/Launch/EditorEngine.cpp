@@ -24,14 +24,6 @@ class ULevel;
 FCollisionManager UEditorEngine::CollisionManager;
 FCoroutineManager UEditorEngine::CoroutineManager;
 
-UEditorEngine::UEditorEngine()
-    : testBlurStrength(0)
-    , UnrealEditor(nullptr)
-    , ContentsUI(nullptr)
-    , LevelEditor(nullptr)
-{
-}
-
 void UEditorEngine::Init()
 {
     Super::Init();
@@ -108,7 +100,6 @@ void UEditorEngine::Input()
     {
         LevelEditor->GetEditorStateManager().SetState(EEditorState::Stopped);
     }
-
 
     if (GetAsyncKeyState('P') & 0x8000 and GetAsyncKeyState(VK_MENU) & 0x8000)
     {

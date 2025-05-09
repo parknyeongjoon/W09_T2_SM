@@ -507,8 +507,7 @@ int main(int arg, char **argv)
 #ifdef STBTT_STATIC
 #define STBTT_DEF static
 #else
-#define STBTT_DEF 
-
+#define STBTT_DEF extern
 #endif
 
 #ifdef __cplusplus

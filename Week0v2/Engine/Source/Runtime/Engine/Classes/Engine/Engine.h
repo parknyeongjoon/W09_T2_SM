@@ -15,7 +15,6 @@ public:
     EWorldType::Type WorldType;
     // TArray<FWorldContext*> ExternalReferences;
     ELevelTick LevelType;
-    
 
     UWorld* GetWorld() { return World; }
     void SetWorld(UWorld* InWorld) { World = InWorld; }
